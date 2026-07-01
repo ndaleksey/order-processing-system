@@ -1,0 +1,25 @@
+@startuml
+
+package "Kafka Topics" {
+	queue "order-events" {
+		[OrderCreated]
+		[OrderConfirmed]
+		[OrderCancelled]
+	}
+
+	queue "payment-events" {
+		[PaymentSucceeded]
+		[PaymentFailed]
+	}
+
+	queue "inventory-events" {
+		[InventoryReserved]
+		[InventoryFailed]
+	}
+
+	queue "notification-events" {
+		[EmailSent]
+	}
+}
+
+@enduml

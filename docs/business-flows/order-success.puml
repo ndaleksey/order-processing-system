@@ -1,0 +1,57 @@
+@startuml
+
+title Order Processing - Happy Path
+
+actor Client
+
+participant "Order Service" as Order
+queue "Kafka" as Kafka
+participant "Payment Service" as Payment
+participant "Inventory Service" as Inventory
+participant "Notification Service" as Notification
+
+Client -> Order : POST /orders
+
+activate Order
+
+Order -> Order : Create Order\nstatus = CREATED
+Order -> Kafka : Publish OrderCreated
+
+deactivate Order
+
+Kafka -> Payment : OrderCreated
+
+activate Payment
+
+Payment -> Payment : Charge payment
+Payment -> Kafka : Publish PaymentSucceeded
+
+deactivate Payment
+
+Kafka -> Inventory : PaymentSucceeded
+
+activate Inventory
+
+Inventory -> Inventory : Reserve products
+Inventory -> Kafka : Publish InventoryReserved
+
+deactivate Inventory
+
+Kafka -> Order : InventoryReserved
+
+activate Order
+
+Order -> Order : status = CONFIRMED
+Order -> Kafka : Publish OrderConfirmed
+
+deactivate Order
+
+Kafka -> Notification : OrderConfirmed
+
+activate Notification
+
+Notification -> Notification : Send email
+
+deactivate Notification
+
+@enduml

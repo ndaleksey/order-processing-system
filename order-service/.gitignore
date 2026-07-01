@@ -1,0 +1,16 @@
+target/
+
+.idea/
+*.iml
+
+.vscode/
+
+.DS_Store
+
+.classpath
+.project
+.settings/
+
+build/
+.kotlin
+!.mvn/wrapper/maven-wrapper.jar
