@@ -1,0 +1,28 @@
+@startuml
+
+actor Client
+
+participant "OrderController" as Controller
+participant "OrderService" as Service
+participant "OrderRepository" as Repository
+participant "OrderEventPublisher" as Publisher
+participant "Spring Events" as Events
+participant "Logging Listener" as Listener
+
+Client -> Controller : POST /orders
+
+Controller -> Service : createOrder()
+
+activate Service
+
+Service -> Repository : save(order)
+
+Service -> Publisher : publish(OrderCreatedEvent)
+
+Publisher -> Events : publishEvent()
+
+Events -> Listener : @EventListener
+
+deactivate Service
+
+@enduml

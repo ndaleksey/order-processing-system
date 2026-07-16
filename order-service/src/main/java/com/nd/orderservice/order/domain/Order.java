@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * @author alexey.shishkov@softline.com
+
  * @since 2026
  */
 
-@Setter
+@Getter
 @NoArgsConstructor
 @Entity
 @Table(name = "orders")

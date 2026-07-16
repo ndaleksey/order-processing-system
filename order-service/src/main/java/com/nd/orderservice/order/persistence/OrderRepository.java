@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 /**
- * @author alexey.shishkov@softline.com
+
  * @since 2026
  */
 @Repository
