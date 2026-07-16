@@ -43,4 +43,8 @@ public class OrderItem {
     public String toString() {
         return productId.toString() + " " + name + " " + productPrice.toString();
     }
+
+    void changeQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 }

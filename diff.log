@@ -1,0 +1,428 @@
+diff --git a/order-service/pom.xml b/order-service/pom.xml
+index ad5f967..bbc5afe 100644
+--- a/order-service/pom.xml
++++ b/order-service/pom.xml
+@@ -45,6 +45,11 @@
+             <artifactId>lombok</artifactId>
+             <optional>true</optional>
+         </dependency>
++
++        <dependency>
++            <groupId>org.mapstruct</groupId>
++            <artifactId>mapstruct</artifactId>
++        </dependency>
+     </dependencies>
+ 
+     <build>
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/api/OrderController.java b/order-service/src/main/java/com/nd/orderservice/order/api/OrderController.java
+index 754832b..453d2e4 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/api/OrderController.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/api/OrderController.java
+@@ -1,13 +1,26 @@
+ package com.nd.orderservice.order.api;
+ 
++import com.nd.orderservice.order.application.OrderService;
++import com.nd.orderservice.order.api.mapper.CreateOrderMapper;
++import lombok.RequiredArgsConstructor;
++import org.springframework.web.bind.annotation.PostMapping;
++import org.springframework.web.bind.annotation.RequestBody;
+ import org.springframework.web.bind.annotation.RequestMapping;
+ import org.springframework.web.bind.annotation.RestController;
+ 
+ /**
+-
+  * @since 2026
+  */
++@RequiredArgsConstructor
+ @RestController
+ @RequestMapping("/orders")
+ public class OrderController {
++
++    private final OrderService orderService;
++    private final CreateOrderMapper mapper;
++
++    @PostMapping
++    public CreateOrderResponse create(@RequestBody CreateOrderRequest createOrderRequest) {
++        throw new UnsupportedOperationException("Not supported yet.");
++    }
+ }
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/application/OrderService.java b/order-service/src/main/java/com/nd/orderservice/order/application/OrderService.java
+index ce9c5a7..af46056 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/application/OrderService.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/application/OrderService.java
+@@ -1,17 +1,42 @@
+ package com.nd.orderservice.order.application;
+ 
++import com.nd.orderservice.order.application.command.CreateOrderCommand;
+ import com.nd.orderservice.order.domain.Order;
++import com.nd.orderservice.order.domain.OrderItem;
++import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
++import com.nd.orderservice.order.persistence.OrderRepository;
++import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
++import lombok.RequiredArgsConstructor;
+ import lombok.extern.slf4j.Slf4j;
+ import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
+ 
+ /**
+-
+  * @since 2026
+  */
+ @Slf4j
+ @Service
++@RequiredArgsConstructor
+ public class OrderService {
+-    public void create(Order order) {
+ 
++    private final OrderRepository repository;
++    private final OutboxEventRepository outboxEventRepository;
++    private final OutboxEventFactory outboxEventFactory;
++
++    @Transactional
++    public Order create(CreateOrderCommand command) {
++        var order = Order.create(command.customerId());
++
++        for (var item : command.items()) {
++            order.addItem(OrderItem.create(item.productId(), item.name(), item.productPrice(), item.quantity()));
++        }
++
++        var savedOrder = repository.save(order);
++
++        var outboxEvent = outboxEventFactory.createOrderCreated(savedOrder);
++
++        outboxEventRepository.save(outboxEvent);
++
++        return savedOrder;
+     }
+ }
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/application/command/CreateOrderCommand.java b/order-service/src/main/java/com/nd/orderservice/order/application/command/CreateOrderCommand.java
+new file mode 100644
+index 0000000..299583d
+--- /dev/null
++++ b/order-service/src/main/java/com/nd/orderservice/order/application/command/CreateOrderCommand.java
+@@ -0,0 +1,21 @@
++package com.nd.orderservice.order.application.command;
++
++import java.math.BigDecimal;
++import java.util.List;
++import java.util.UUID;
++
++/**
++ * @since 2026
++ */
++public record CreateOrderCommand(
++        UUID customerId,
++        List<Item> items
++) {
++    public record Item(
++            UUID productId,
++            String name,
++            BigDecimal productPrice,
++            int quantity
++    ) {
++    }
++}
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/application/event/OrderEventPublisher.java b/order-service/src/main/java/com/nd/orderservice/order/application/event/OrderEventPublisher.java
+new file mode 100644
+index 0000000..b59bd57
+--- /dev/null
++++ b/order-service/src/main/java/com/nd/orderservice/order/application/event/OrderEventPublisher.java
+@@ -0,0 +1,9 @@
++package com.nd.orderservice.order.application.event;
++
++/**
++ * @since 2026
++ */
++public interface OrderEventPublisher {
++
++    void publish(OrderCreatedEvent event);
++}
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/application/mapper/CreateOrderMapper.java b/order-service/src/main/java/com/nd/orderservice/order/application/mapper/CreateOrderMapper.java
+new file mode 100644
+index 0000000..614b664
+--- /dev/null
++++ b/order-service/src/main/java/com/nd/orderservice/order/application/mapper/CreateOrderMapper.java
+@@ -0,0 +1,13 @@
++package com.nd.orderservice.order.application.mapper;
++
++import com.nd.orderservice.order.api.CreateOrderRequest;
++import com.nd.orderservice.order.application.command.CreateOrderCommand;
++import org.mapstruct.Mapper;
++
++/**
++ * @since 2026
++ */
++@Mapper(componentModel = "spring")
++public interface CreateOrderMapper {
++    CreateOrderCommand toCommand(CreateOrderRequest createOrderRequest);
++}
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/domain/Order.java b/order-service/src/main/java/com/nd/orderservice/order/domain/Order.java
+index b18a387..c4f0298 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/domain/Order.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/domain/Order.java
+@@ -11,7 +11,6 @@ import java.util.List;
+ import java.util.UUID;
+ 
+ /**
+-
+  * @since 2026
+  */
+ 
+@@ -39,10 +38,13 @@ public class Order {
+ 
+     private UUID customerId;
+ 
+-    public static Order create() {
++    public static Order create(UUID customerId) {
+         var order = new Order();
++        order.customerId = customerId;
+         order.status = OrderStatus.CREATED;
+         order.totalPrice = BigDecimal.ZERO;
++        order.createdAt = Instant.now();
++        order.updatedAt = Instant.now();
+         return order;
+     }
+ 
+@@ -62,6 +64,21 @@ public class Order {
+         this.status = OrderStatus.CONFIRMED;
+     }
+ 
++    public void changeQuantity(UUID itemId, Integer quantity) {
++        var item = findItem(itemId);
++
++        item.changeQuantity(quantity);
++
++        recalcTotal();
++    }
++
++    private OrderItem findItem(UUID itemId) {
++        return items.stream()
++                .filter(item -> item.getId().equals(itemId))
++                .findFirst()
++                .orElseThrow(IllegalStateException::new);
++    }
++
+     private void recalcTotal() {
+         this.totalPrice = items.stream()
+                 .map(i -> i.getProductPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/domain/OrderItem.java b/order-service/src/main/java/com/nd/orderservice/order/domain/OrderItem.java
+index e6e5822..3479cf0 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/domain/OrderItem.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/domain/OrderItem.java
+@@ -43,4 +43,8 @@ public class OrderItem {
+     public String toString() {
+         return productId.toString() + " " + name + " " + productPrice.toString();
+     }
++
++    void changeQuantity(Integer quantity) {
++        this.quantity = quantity;
++    }
+ }
+\ No newline at end of file
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/domain/OutboxEvent.java b/order-service/src/main/java/com/nd/orderservice/order/domain/OutboxEvent.java
+new file mode 100644
+index 0000000..741ec7e
+--- /dev/null
++++ b/order-service/src/main/java/com/nd/orderservice/order/domain/OutboxEvent.java
+@@ -0,0 +1,41 @@
++package com.nd.orderservice.order.domain;
++
++import jakarta.persistence.*;
++import lombok.Getter;
++import lombok.NoArgsConstructor;
++import org.hibernate.annotations.UuidGenerator;
++
++import java.time.Instant;
++import java.util.UUID;
++
++/**
++ * @since 2026
++ */
++@Getter
++@NoArgsConstructor
++@Entity
++@Table(name = "outbox_event")
++public class OutboxEvent {
++
++    @Id
++    @UuidGenerator
++    private UUID id;
++
++    private String type;
++
++    private UUID aggregateId;
++
++    private Instant createdAt;
++
++    @Column(columnDefinition = "jsonb")
++    private String payload;
++
++    public static OutboxEvent orderCreated(UUID orderId, String payload) {
++        var event = new OutboxEvent();
++        event.type = "ORDER_CREATED";
++        event.aggregateId = orderId;
++        event.createdAt = Instant.now();
++        event.payload = payload;
++        return event;
++    }
++}
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/OrderEventPublisher.java b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/OrderEventPublisher.java
+deleted file mode 100644
+index a6887a1..0000000
+--- a/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/OrderEventPublisher.java
++++ /dev/null
+@@ -1,11 +0,0 @@
+-package com.nd.orderservice.order.infrastructure.event;
+-
+-import com.nd.orderservice.order.application.event.OrderCreatedEvent;
+-
+-/**
+- * @since 2026
+- */
+-public interface OrderEventPublisher {
+-
+-    void publish(OrderCreatedEvent event);
+-}
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/SpringOrderEventPublisher.java b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/SpringOrderEventPublisher.java
+index 0180b19..01d17a0 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/SpringOrderEventPublisher.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/SpringOrderEventPublisher.java
+@@ -1,6 +1,7 @@
+ package com.nd.orderservice.order.infrastructure.event;
+ 
+ import com.nd.orderservice.order.application.event.OrderCreatedEvent;
++import com.nd.orderservice.order.application.event.OrderEventPublisher;
+ import lombok.RequiredArgsConstructor;
+ import org.springframework.context.ApplicationEventPublisher;
+ import org.springframework.stereotype.Component;
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/application/LoggingOrderCreatedListener.java b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/listener/LoggingOrderCreatedListener.java
+similarity index 66%
+rename from order-service/src/main/java/com/nd/orderservice/order/application/LoggingOrderCreatedListener.java
+rename to order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/listener/LoggingOrderCreatedListener.java
+index cdcdb5e..fa001cc 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/application/LoggingOrderCreatedListener.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/event/listener/LoggingOrderCreatedListener.java
+@@ -1,9 +1,9 @@
+-package com.nd.orderservice.order.application;
++package com.nd.orderservice.order.infrastructure.event.listener;
+ 
+ import com.nd.orderservice.order.application.event.OrderCreatedEvent;
+ import lombok.extern.slf4j.Slf4j;
+-import org.springframework.context.event.EventListener;
+ import org.springframework.stereotype.Component;
++import org.springframework.transaction.event.TransactionalEventListener;
+ 
+ /**
+  * @since 2026
+@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
+ @Slf4j
+ public class LoggingOrderCreatedListener {
+ 
+-    @EventListener
++    @TransactionalEventListener
+     public void on(OrderCreatedEvent event) {
+         log.info("Order created: {}", event);
+     }
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/infrastructure/outbox/OutboxEventFactory.java b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/outbox/OutboxEventFactory.java
+new file mode 100644
+index 0000000..0226f5b
+--- /dev/null
++++ b/order-service/src/main/java/com/nd/orderservice/order/infrastructure/outbox/OutboxEventFactory.java
+@@ -0,0 +1,26 @@
++package com.nd.orderservice.order.infrastructure.outbox;
++
++import com.nd.orderservice.order.application.event.OrderCreatedEvent;
++import com.nd.orderservice.order.domain.Order;
++import com.nd.orderservice.order.infrastructure.outbox.OutboxEvent;
++import lombok.RequiredArgsConstructor;
++import org.springframework.stereotype.Component;
++import tools.jackson.databind.ObjectMapper;
++
++/**
++ * @since 2026
++ */
++@Component
++@RequiredArgsConstructor
++public class OutboxEventFactory {
++
++    private final ObjectMapper objectMapper;
++
++    public OutboxEvent createOrderCreated(Order order) {
++        var event = new OrderCreatedEvent(order.getId(), order.getCustomerId());
++
++        return OutboxEvent.orderCreated(order.getId(), objectMapper.writeValueAsString(event)
++        );
++
++    }
++}
+diff --git a/order-service/src/main/java/com/nd/orderservice/order/persistence/OutboxEventRepository.java b/order-service/src/main/java/com/nd/orderservice/order/persistence/OutboxEventRepository.java
+index 6be0ae5..7cdf413 100644
+--- a/order-service/src/main/java/com/nd/orderservice/order/persistence/OutboxEventRepository.java
++++ b/order-service/src/main/java/com/nd/orderservice/order/persistence/OutboxEventRepository.java
+@@ -1,7 +1,14 @@
+ package com.nd.orderservice.order.persistence;
+ 
++import com.nd.orderservice.order.infrastructure.outbox.OutboxEvent;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++import java.util.UUID;
++
+ /**
+  * @since 2026
+  */
+-public interface OutboxEventRepository {
++@Repository
++public interface OutboxEventRepository extends JpaRepository<OutboxEvent, UUID> {
+ }
+diff --git a/pom.xml b/pom.xml
+index af66291..8b2b50c 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -23,6 +23,45 @@
+     <properties>
+         <java.version>21</java.version>
+         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
++        <mapstruct.version>1.6.3</mapstruct.version>
+     </properties>
+ 
++    <dependencyManagement>
++        <dependencies>
++            <dependency>
++                <groupId>org.mapstruct</groupId>
++                <artifactId>mapstruct</artifactId>
++                <version>${mapstruct.version}</version>
++            </dependency>
++        </dependencies>
++    </dependencyManagement>
++
++    <build>
++        <pluginManagement>
++            <plugins>
++                <plugin>
++                    <groupId>org.apache.maven.plugins</groupId>
++                    <artifactId>maven-compiler-plugin</artifactId>
++
++                    <configuration>
++                        <annotationProcessorPaths>
++                            <path>
++                                <groupId>org.mapstruct</groupId>
++                                <artifactId>mapstruct-processor</artifactId>
++                                <version>${mapstruct.version}</version>
++                            </path>
++
++                            <path>
++                                <groupId>org.projectlombok</groupId>
++                                <artifactId>lombok</artifactId>
++                                <version>${lombok.version}</version>
++                            </path>
++                        </annotationProcessorPaths>
++                    </configuration>
++
++                </plugin>
++            </plugins>
++        </pluginManagement>
++    </build>
++
+ </project>
+\ No newline at end of file

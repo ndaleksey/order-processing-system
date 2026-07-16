@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 
 /**
-
  * @since 2026
  */
 
@@ -39,10 +38,13 @@ public class Order {
 
     private UUID customerId;
 
-    public static Order create() {
+    public static Order create(UUID customerId) {
         var order = new Order();
+        order.customerId = customerId;
         order.status = OrderStatus.CREATED;
         order.totalPrice = BigDecimal.ZERO;
+        order.createdAt = Instant.now();
+        order.updatedAt = Instant.now();
         return order;
     }
 
@@ -60,6 +62,21 @@ public class Order {
 
     public void markConfirmed() {
         this.status = OrderStatus.CONFIRMED;
+    }
+
+    public void changeQuantity(UUID itemId, Integer quantity) {
+        var item = findItem(itemId);
+
+        item.changeQuantity(quantity);
+
+        recalcTotal();
+    }
+
+    private OrderItem findItem(UUID itemId) {
+        return items.stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
     }
 
     private void recalcTotal() {
