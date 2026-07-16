@@ -1,4 +1,4 @@
-package com.nd.orderservice.order.application;
+package com.nd.orderservice.order.infrastructure.event.listener;
 
 import com.nd.orderservice.order.application.event.OrderCreatedEvent;
 import lombok.extern.slf4j.Slf4j;

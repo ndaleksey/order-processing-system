@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.infrastructure.event;
 
 import com.nd.orderservice.order.application.event.OrderCreatedEvent;
+import com.nd.orderservice.order.application.event.OrderEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
