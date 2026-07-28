@@ -3,7 +3,9 @@ package com.nd.orderservice.order.infrastructure.outbox;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -27,7 +29,8 @@ public class OutboxEvent {
 
     private Instant createdAt;
 
-    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "payload", columnDefinition = "jsonb", nullable = false)
     private String payload;
 
     public static OutboxEvent orderCreated(UUID orderId, String payload) {
