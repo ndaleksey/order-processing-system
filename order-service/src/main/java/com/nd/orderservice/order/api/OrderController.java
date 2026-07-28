@@ -4,10 +4,8 @@ import com.nd.orderservice.order.application.OrderService;
 import com.nd.orderservice.order.api.mapper.CreateOrderMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @since 2026
@@ -21,6 +19,7 @@ public class OrderController {
     private final CreateOrderMapper mapper;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public CreateOrderResponse create(@Valid @RequestBody CreateOrderRequest request) {
         var command = mapper.toCommand(request);
         var order = orderService.create(command);
