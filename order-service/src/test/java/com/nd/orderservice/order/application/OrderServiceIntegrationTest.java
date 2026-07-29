@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * @since 2026
  */
 @SpringBootTest
-class OrderServiceIT {
+class OrderServiceIntegrationTest {
     @Autowired
     private OrderService orderService;
 
@@ -42,8 +42,20 @@ class OrderServiceIT {
         var order = orderService.create(command);
 
         assertTrue(orderRepository.existsById(order.getId()));
-        assertNotNull(order.getItems());
-        assertFalse(order.getItems().isEmpty());
+
+        var persistedOrder = orderRepository.findById(order.getId())
+                .orElseThrow();
+
+        assertNotNull(persistedOrder.getItems());
+        assertFalse(persistedOrder.getItems().isEmpty());
+
+        assertEquals(1, persistedOrder.getItems().size());
+
+        var persistedItem = persistedOrder.getItems().getFirst();
+
+        assertEquals(productId, persistedItem.getProductId());
+        assertEquals("Item 1", persistedItem.getProductName());
+        assertEquals(10, persistedItem.getQuantity());
 
         var events = outboxEventRepository.findAll();
 
@@ -58,6 +70,7 @@ class OrderServiceIT {
 
         var event = eventOpt.get();
 
+        assertEquals(order.getId(), event.getAggregateId());
         assertEquals("ORDER_CREATED", event.getType());
     }
 }
