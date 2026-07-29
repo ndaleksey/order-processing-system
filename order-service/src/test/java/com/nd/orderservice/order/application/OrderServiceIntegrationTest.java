@@ -4,6 +4,8 @@ package com.nd.orderservice.order.application;
 import com.nd.orderservice.order.application.command.CreateOrderCommand;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
 import com.nd.orderservice.order.persistence.OrderRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,8 +33,12 @@ class OrderServiceIntegrationTest {
     @Autowired
     private OutboxEventRepository outboxEventRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Transactional
     @Test
-    void create() {
+    void shouldPersistOrderItemsAndOutboxEvent() {
         var customerId = UUID.randomUUID();
         var productId = UUID.randomUUID();
         var items = List.of(new CreateOrderCommand.Item(productId, "Item 1", BigDecimal.valueOf(100), 10));
@@ -41,12 +47,12 @@ class OrderServiceIntegrationTest {
 
         var order = orderService.create(command);
 
-        assertTrue(orderRepository.existsById(order.getId()));
+        entityManager.flush();
+        entityManager.clear();
 
         var persistedOrder = orderRepository.findById(order.getId())
                 .orElseThrow();
 
-        assertNotNull(persistedOrder.getItems());
         assertFalse(persistedOrder.getItems().isEmpty());
 
         assertEquals(1, persistedOrder.getItems().size());
@@ -58,10 +64,6 @@ class OrderServiceIntegrationTest {
         assertEquals(10, persistedItem.getQuantity());
 
         var events = outboxEventRepository.findAll();
-
-        assertNotNull(events);
-        assertFalse(events.isEmpty());
-
         var eventOpt = events.stream()
                 .filter(event -> event.getAggregateId().equals(order.getId()))
                 .findAny();
