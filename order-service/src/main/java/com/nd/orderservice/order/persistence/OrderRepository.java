@@ -1,6 +1,5 @@
 package com.nd.orderservice.order.persistence;
 
-import com.nd.orderservice.order.api.CreateOrderRequest;
 import com.nd.orderservice.order.domain.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

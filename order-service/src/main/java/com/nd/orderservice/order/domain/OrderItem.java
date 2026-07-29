@@ -22,7 +22,7 @@ public class OrderItem {
     private UUID id;
 
     private UUID productId;
-    private String name;
+    private String productName;
     private BigDecimal productPrice;
     private Integer quantity;
 
@@ -33,7 +33,7 @@ public class OrderItem {
     public static OrderItem create(UUID productId, String name, BigDecimal productPrice, int quantity) {
         var orderItem = new OrderItem();
         orderItem.productId = productId;
-        orderItem.name = name;
+        orderItem.productName = name;
         orderItem.productPrice = productPrice;
         orderItem.quantity = quantity;
         return orderItem;
@@ -41,7 +41,7 @@ public class OrderItem {
 
     @Override
     public String toString() {
-        return productId.toString() + " " + name + " " + productPrice.toString();
+        return productId.toString() + " " + productName + " " + productPrice.toString();
     }
 
     void changeQuantity(Integer quantity) {
