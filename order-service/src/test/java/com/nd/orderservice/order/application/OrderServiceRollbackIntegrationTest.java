@@ -7,6 +7,7 @@ import com.nd.orderservice.order.persistence.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 /**
  * @since 2026
  */
+@ActiveProfiles("test")
 @SpringBootTest
 class OrderServiceRollbackIntegrationTest {
     @Autowired

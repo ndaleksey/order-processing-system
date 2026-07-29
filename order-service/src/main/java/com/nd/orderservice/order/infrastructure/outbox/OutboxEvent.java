@@ -29,6 +29,8 @@ public class OutboxEvent {
 
     private Instant createdAt;
 
+    private Instant publishedAt;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", columnDefinition = "jsonb", nullable = false)
     private String payload;
@@ -40,5 +42,9 @@ public class OutboxEvent {
         event.createdAt = Instant.now();
         event.payload = payload;
         return event;
+    }
+
+    public void markPublished() {
+        this.publishedAt = Instant.now();
     }
 }
