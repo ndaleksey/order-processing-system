@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.outbox.persistence;
 
 import com.nd.orderservice.order.domain.Order;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEvent;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
 import jakarta.persistence.EntityManager;
