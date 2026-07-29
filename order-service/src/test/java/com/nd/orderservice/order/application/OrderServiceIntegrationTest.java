@@ -16,7 +16,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
@@ -63,14 +62,10 @@ class OrderServiceIntegrationTest {
         assertEquals("Item 1", persistedItem.getProductName());
         assertEquals(10, persistedItem.getQuantity());
 
-        var events = outboxEventRepository.findAll();
-        var eventOpt = events.stream()
-                .filter(event -> event.getAggregateId().equals(order.getId()))
-                .findAny();
-
-        assertTrue(eventOpt.isPresent());
-
-        var event = eventOpt.get();
+        var event = outboxEventRepository.findAll().stream()
+                .filter(candidate -> candidate.getAggregateId().equals(order.getId()))
+                .findFirst()
+                .orElseThrow();
 
         assertEquals(order.getId(), event.getAggregateId());
         assertEquals("ORDER_CREATED", event.getType());
