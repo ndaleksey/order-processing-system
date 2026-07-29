@@ -1,9 +1,6 @@
-package com.nd.orderservice.order.outbox.persistence;
+package com.nd.orderservice.order.infrastructure.outbox;
 
 import com.nd.orderservice.order.domain.Order;
-import com.nd.orderservice.order.infrastructure.outbox.OutboxEvent;
-import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
-import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
@@ -21,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 @ActiveProfiles("test")
 @SpringBootTest
-public class OutboxEventRepositoryIntegrationTest {
+class OutboxEventRepositoryIntegrationTest {
     @Autowired
     private OutboxEventRepository outboxEventRepository;
 
