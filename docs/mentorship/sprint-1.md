@@ -1,233 +1,352 @@
-# Sprint 1: Order Service Foundation
+# Спринт 1. Основа Order Service
 
-## Objective
+## Статус
 
-Turn the current `order-service` skeleton into a minimal production-style REST service for creating and reading orders.
+**Завершён частично.**
 
-Sprint duration: 5 to 7 focused practice days.
+Главный сценарий создания заказа реализован и объединён в `main`. Некоторые первоначально запланированные задачи перенесены на более поздние этапы, чтобы не задерживать переход к Kafka и микросервисному взаимодействию.
 
-Theory/practice ratio: 40% theory, 60% implementation.
+---
 
-Teaching approach: start from the problem, discuss trade-offs, then use the smallest suitable framework feature or pattern.
+## Цель
 
-## Current Baseline
+Превратить каркас `order-service` в работающий REST-сервис, который:
 
-The project already has:
+* принимает запрос на создание заказа;
+* проверяет входные данные;
+* создаёт доменный агрегат `Order`;
+* сохраняет заказ и его позиции в PostgreSQL;
+* возвращает клиенту результат;
+* выполняет всю операцию в осознанной транзакционной границе.
 
-- root Maven project;
-- `order-service` module;
-- Spring Boot application entry point;
-- initial `Order` and `OrderItem` JPA entities;
-- empty controller, DTOs, handler, and event publisher classes;
-- PostgreSQL configuration;
-- PlantUML sketches for Kafka topics and happy-path order flow.
+Продолжительность спринта: 5–7 учебных дней.
 
-The project currently builds with system Maven using:
+Соотношение теории и практики:
 
-```bash
-mvn -q test
+* 40% — теория и обсуждение решений;
+* 60% — реализация, тестирование и code review.
+
+Подход к обучению:
+
+1. Сначала формулируется инженерная проблема.
+2. Обсуждаются возможные решения и компромиссы.
+3. Выбирается минимально достаточное решение.
+4. Реализуется законченный и проверяемый инкремент.
+
+---
+
+## Исходное состояние
+
+В начале спринта проект содержал:
+
+* корневой Maven-проект;
+* модуль `order-service`;
+* точку входа Spring Boot;
+* начальные JPA-сущности `Order` и `OrderItem`;
+* заготовки controller, DTO, application classes и event publisher;
+* конфигурацию PostgreSQL;
+* PlantUML-диаграммы будущего Kafka-сценария.
+
+---
+
+# Выполненные задачи
+
+## Задача 1. Контракт API создания заказа
+
+### Проблема
+
+Внешнему клиенту нужен стабильный способ создать заказ, при этом:
+
+* некорректные запросы не должны попадать в бизнес-логику;
+* API не должен раскрывать внутреннее устройство JPA-сущностей;
+* controller не должен содержать бизнес-логику.
+
+### Изученные темы
+
+* REST-моделирование ресурса;
+* request и response DTO;
+* граница API;
+* Bean Validation;
+* MapStruct;
+* HTTP status codes.
+
+### Реализовано
+
+* `POST /orders`;
+* `CreateOrderRequest`;
+* описание позиции заказа во входном DTO;
+* `CreateOrderResponse`;
+* преобразование DTO в command;
+* преобразование созданного заказа в response;
+* валидация входного запроса;
+* ответ `201 Created`.
+
+### Definition of Done
+
+* запрос содержит `customerId`;
+* запрос содержит хотя бы одну позицию;
+* позиция содержит идентификатор товара, название, цену и количество;
+* controller передаёт работу application layer;
+* JPA-сущности не возвращаются напрямую;
+* успешное создание возвращает идентификатор заказа и его статус.
+
+### Вопросы для собеседования
+
+* Почему controller не должен возвращать JPA entity?
+* Чем request DTO отличается от domain model?
+* Где должна выполняться валидация?
+* Почему одной Bean Validation недостаточно для защиты доменных инвариантов?
+* Зачем нужен отдельный command?
+
+---
+
+## Задача 2. Доменная модель заказа
+
+### Проблема
+
+Заказ должен быть агрегатом, управляющим жизненным циклом своих позиций.
+
+Нельзя допускать создание заведомо некорректного состояния через публичный API доменной модели.
+
+### Изученные темы
+
+* aggregate root;
+* entity;
+* factory methods;
+* rich domain model и anemic domain model;
+* cascade;
+* orphan removal;
+* использование `BigDecimal` для денежных значений.
+
+### Реализовано
+
+* агрегат `Order`;
+* сущность `OrderItem`;
+* фабричные методы создания;
+* управление позициями через агрегат;
+* связь `OneToMany`;
+* cascade persistence;
+* orphan removal;
+* расчёт стоимости заказа;
+* статусы заказа.
+
+### Definition of Done
+
+* позиции сохраняются вместе с заказом;
+* `Order` управляет жизненным циклом `OrderItem`;
+* идентификаторы генерируются при сохранении;
+* денежные значения представлены через `BigDecimal`;
+* основной сценарий создания агрегата работает.
+
+### Оставшиеся улучшения
+
+Позже необходимо усилить доменную модель:
+
+* запретить пустой заказ на уровне домена;
+* запретить неположительное количество;
+* запретить нулевую или отрицательную цену;
+* проверить недопустимые переходы статусов;
+* добавить unit-тесты доменных инвариантов.
+
+Эти задачи не блокируют Kafka-сценарий, но должны быть закрыты до финального архитектурного review.
+
+### Вопросы для собеседования
+
+* Что такое aggregate root?
+* Почему дочерние сущности должны изменяться через агрегат?
+* Для чего используются cascade и orphan removal?
+* Почему деньги не следует хранить в `double`?
+* Какие риски создают публичные setters?
+
+---
+
+## Задача 3. Application use case создания заказа
+
+### Проблема
+
+Создание заказа является одной бизнес-операцией.
+
+Заказ, позиции и связанное событие не должны сохраняться частично.
+
+### Изученные темы
+
+* application service;
+* command;
+* domain layer;
+* repository;
+* transaction boundary;
+* rollback;
+* Spring proxy и `@Transactional`.
+
+### Реализовано
+
+* command создания заказа;
+* application service;
+* сохранение заказа через `OrderRepository`;
+* транзакционная граница на application service;
+* возврат созданного агрегата;
+* integration test сохранения заказа и позиций;
+* проверка rollback при ошибке сохранения outbox-события.
+
+### Definition of Done
+
+* controller не содержит бизнес-логику;
+* application service управляет use case;
+* транзакция начинается на границе application layer;
+* ошибка при сохранении связанной части операции откатывает заказ;
+* integration test проверяет состояние, повторно загруженное из БД.
+
+### Вопросы для собеседования
+
+* Где следует размещать `@Transactional`?
+* Почему транзакцию не стоит начинать в controller?
+* Что такое self-invocation?
+* Когда Hibernate выполняет `INSERT`?
+* Чем `flush()` отличается от commit?
+* Почему после `flush()` в тесте используется `clear()`?
+
+---
+
+## Задача 4. Интеграционное тестирование persistence layer
+
+### Проблема
+
+Тесты не должны:
+
+* зависеть от старых данных локальной БД;
+* проверять только состояние managed-объектов;
+* оставлять данные после выполнения;
+* использовать production-конфигурацию без необходимости.
+
+### Изученные темы
+
+* Spring Boot integration tests;
+* Persistence Context;
+* managed entities;
+* first-level cache;
+* `flush()` и `clear()`;
+* rollback тестовой транзакции;
+* Spring profiles;
+* `ddl-auto`;
+* изоляция тестовой базы.
+
+### Реализовано
+
+* профиль `test`;
+* отдельная база `order_test_db`;
+* `application-test.yaml` в `src/test/resources`;
+* `@ActiveProfiles("test")`;
+* `ddl-auto: create-drop` для текущего тестового окружения;
+* repository integration test;
+* проверка выборки сущностей после очистки Persistence Context.
+
+### Definition of Done
+
+* тесты не используют накопленные данные `order_db`;
+* тестовая конфигурация не попадает в production resources;
+* запросы репозитория проверяются на реальной PostgreSQL;
+* тесты подтверждают результат, а не только запуск Spring Context.
+
+### Вопросы для собеседования
+
+* Почему `@SpringBootTest` сам по себе не открывает тестовую транзакцию?
+* Для чего нужен `@ActiveProfiles`?
+* Чем `create-drop` отличается от `update`?
+* Почему тесты не должны использовать общую development-базу?
+* Что проверяет `entityManager.clear()`?
+
+---
+
+# Отложенные задачи спринта
+
+## GET /orders/{id}
+
+Первоначальный план включал:
+
+* чтение заказа по идентификатору;
+* явный response DTO;
+* `404 Not Found`;
+* read-only transaction;
+* контроль lazy loading.
+
+Задача переносится на четвёртую неделю, где будет использоваться для практики:
+
+* N+1;
+* `join fetch`;
+* `EntityGraph`;
+* DTO projections;
+* обработки отсутствующего ресурса.
+
+---
+
+## Глобальная обработка ошибок
+
+Необходимо позднее добавить:
+
+* `@RestControllerAdvice`;
+* единый формат API errors;
+* обработку validation errors;
+* обработку отсутствующего заказа;
+* обработку ошибок доменных инвариантов.
+
+Эта задача переносится на укрепление API перед финальным review.
+
+---
+
+## Unit и slice tests
+
+Реализованы integration tests основного persistence-сценария.
+
+Остаются:
+
+* unit-тесты доменной модели;
+* `@WebMvcTest` для controller;
+* тесты validation errors;
+* тесты глобального error handler.
+
+---
+
+# Итоги спринта
+
+К завершению спринта получен работающий сценарий:
+
+```text
+HTTP POST /orders
+    → validation
+    → mapping DTO to command
+    → application service
+    → creation of Order aggregate
+    → persistence of Order and OrderItem
+    → HTTP 201 Created
 ```
 
-The module Maven wrapper is incomplete because `.mvn/wrapper/maven-wrapper.properties` is missing.
+В дальнейшем сценарий был расширен сохранением outbox-события в той же транзакции.
 
-## Backlog
+---
 
-### Task 1: Define the Order API Contract
+# Checklist code review
 
-Problem:
+* Controller делегирует работу application layer.
+* API не возвращает JPA entities.
+* DTO имеют явное назначение.
+* `@Transactional` не размещён в controller.
+* Деньги представлены через `BigDecimal`.
+* `Order` управляет жизненным циклом `OrderItem`.
+* Persistence behavior проверяется integration tests.
+* Тесты используют отдельный профиль.
+* После `flush()` и `clear()` состояние повторно читается из БД.
+* Ошибка сохранения outbox приводит к rollback заказа.
 
-- external clients need a stable way to create orders;
-- invalid payloads must be rejected before reaching business logic;
-- the API must not expose persistence internals.
+---
 
-Minimum theory:
+# Технический долг
 
-- REST resource modeling;
-- command DTO versus read DTO;
-- validation as API boundary protection.
+* усилить доменные инварианты;
+* реализовать `GET /orders/{id}`;
+* добавить global exception handler;
+* добавить domain unit tests;
+* добавить controller slice tests;
+* перейти с автоматического управления схемой на Flyway;
+* воспроизвести и исправить N+1;
+* добавить optimistic locking.
 
-Practice:
-
-- define `CreateOrderRequest`;
-- define nested item request;
-- define `CreateOrderResponse`;
-- define `OrderDto`;
-- choose response status codes.
-
-Definition of done:
-
-- request contains `customerId` and at least one item;
-- item contains `productId`, `name`, `productPrice`, and `quantity`;
-- invalid input maps to `400 Bad Request`;
-- response contains created order id and status.
-
-Interview questions:
-
-- Why should entities not be exposed directly from controllers?
-- Where should validation live: controller, service, or domain?
-- What is the difference between command DTO and query DTO?
-
-### Task 2: Implement Domain Invariants
-
-Problem:
-
-- an order with no customer, no items, negative price, or invalid quantity must not exist;
-- relying only on controller validation is not enough because domain code can be called from tests, jobs, or event consumers.
-
-Minimum theory:
-
-- aggregate root;
-- invariants;
-- entity factory methods;
-- anemic domain model versus rich domain model.
-
-Practice:
-
-- require non-null `customerId`;
-- reject empty orders;
-- reject non-positive quantity;
-- reject negative or zero product price;
-- maintain `totalPrice` inside the aggregate;
-- add timestamps.
-
-Definition of done:
-
-- invalid domain state cannot be created through public factory methods;
-- total price is recalculated consistently;
-- domain behavior is covered by unit tests.
-
-Interview questions:
-
-- What is an aggregate root?
-- Why is `BigDecimal` preferred for money?
-- What are the risks of public setters on entities?
-
-### Task 3: Implement Application Use Case
-
-Problem:
-
-- creating an order is one business operation;
-- saving partially valid state must be impossible;
-- persistence should be committed or rolled back as one unit.
-
-Minimum theory:
-
-- application service versus domain entity;
-- transaction boundary;
-- repository abstraction;
-- command handling.
-
-Practice:
-
-- implement create-order use case;
-- save order in PostgreSQL through `OrderRepository`;
-- return created order response;
-- mark the service method transactional.
-
-Definition of done:
-
-- use case has a clear input and output;
-- controller does not contain business logic;
-- transaction starts at application service boundary;
-- repository is used only by application layer.
-
-Interview questions:
-
-- Where should `@Transactional` be placed and why?
-- What happens if a transaction commits but event publishing fails?
-- What is the difference between application service and domain service?
-
-### Task 4: Add Read Endpoint
-
-Problem:
-
-- clients need to read created orders;
-- missing resources must be represented clearly;
-- JPA internals must not leak through JSON serialization.
-
-Minimum theory:
-
-- query model;
-- lazy loading;
-- transaction scope for reads;
-- HTTP status semantics.
-
-Practice:
-
-- implement `GET /orders/{id}`;
-- map missing order to `404 Not Found`;
-- map entity to DTO;
-- avoid leaking Hibernate proxies.
-
-Definition of done:
-
-- existing order returns full order DTO;
-- missing order returns 404;
-- mapping is explicit;
-- behavior is tested.
-
-Interview questions:
-
-- What causes `LazyInitializationException`?
-- How can N+1 appear in read endpoints?
-- When is `@Transactional(readOnly = true)` useful?
-
-### Task 5: Add Error Handling and Tests
-
-Problem:
-
-- failures should be predictable for API clients;
-- regressions should be caught before manual testing;
-- tests should prove behavior, not only framework startup.
-
-Minimum theory:
-
-- exception taxonomy;
-- global exception handling;
-- test pyramid;
-- controller slice tests versus integration tests.
-
-Practice:
-
-- add global error handler;
-- add validation error response;
-- add domain tests;
-- add service tests;
-- add controller tests.
-
-Definition of done:
-
-- validation failures are predictable;
-- not-found failures are predictable;
-- core domain behavior is tested without Spring context;
-- API behavior is tested with Spring MVC test support.
-
-Interview questions:
-
-- What should be tested with unit tests versus integration tests?
-- Why are context-loading tests weak?
-- How should API errors be represented?
-
-## Sprint 1 Review Checklist
-
-- Controller delegates to application layer.
-- DTOs do not expose JPA entities.
-- Domain prevents invalid state.
-- `@Transactional` is not placed on controller methods.
-- Money is represented with `BigDecimal`.
-- `Order` owns `OrderItem` lifecycle.
-- Error responses are consistent.
-- Tests prove business behavior, not only Spring context startup.
-
-## Out of Scope
-
-These topics are intentionally deferred:
-
-- Kafka publishing;
-- Transactional Outbox;
-- Saga implementation;
-- Redis;
-- Docker Compose;
-- query performance tuning.
-
-Deferring them keeps Sprint 1 focused and prevents architecture from outrunning the working domain model.
