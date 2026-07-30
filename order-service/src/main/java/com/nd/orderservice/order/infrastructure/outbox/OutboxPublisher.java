@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.infrastructure.outbox;
 
 import com.nd.orderservice.order.infrastructure.kafka.OrderEventProducer;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,22 +17,19 @@ public class OutboxPublisher {
     private final OrderEventProducer orderEventProducer;
 
     @SuppressWarnings("unused")
+    @Transactional
     public void publishPendingEvents() {
         outboxEventRepository.findTop10ByPublishedAtIsNullOrderByCreatedAtAsc()
-                .forEach(this::sendEvent);
-    }
+                .forEach(event -> {
+                    var sendingResult = orderEventProducer.send(event.getAggregateId(), event.getPayload())
+                            .join();
 
-    private void sendEvent(OutboxEvent event) {
-        orderEventProducer.send(event.getAggregateId(), event.getPayload())
-                .thenAccept(result -> {
-                    var metadata = result.getRecordMetadata();
-                    log.info("Sent to topic = {}, partition = {}, offset = {}",
-                            metadata.topic(), metadata.partition(), metadata.offset());
+                    var metadata = sendingResult.getRecordMetadata();
+
+                    log.info("Published outbox event [id = {}, topic = {}, partition = {}, offset = {}]",
+                            event.getId(), metadata.topic(), metadata.partition(), metadata.offset());
+
                     event.markPublished();
-                })
-                .exceptionally(e -> {
-                    log.error("Kafka send failed", e);
-                    return null;
                 });
     }
 }
