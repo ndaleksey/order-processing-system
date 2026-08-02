@@ -13,9 +13,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -96,5 +100,47 @@ class OutboxPublisherIntegrationTest {
                 .findTop10ByPublishedAtIsNullOrderByCreatedAtAsc();
 
         assertTrue(pendingEvents.isEmpty());
+    }
+
+    @Test
+    void shouldKeepEventUnpublishedWhenKafkaSendFails() {
+        outboxEventRepository.deleteAll();
+
+        var orderId = UUID.fromString(
+                "97630c6f-a2a1-4adc-ab0c-02f5d45b3699"
+        );
+
+        var payload = """
+                {
+                  "orderId": "97630c6f-a2a1-4adc-ab0c-02f5d45b3699",
+                  "customerId": "c4bc48d5-9fdf-48a8-af0c-fb63035f7093"
+                }
+                """;
+
+        var event = OutboxEvent.orderCreated(orderId, payload);
+        var savedEvent = outboxEventRepository.saveAndFlush(event);
+
+        when(orderEventProducer.send(eq(orderId), anyString()))
+                .thenReturn(CompletableFuture.failedFuture(
+                        new RuntimeException("Kafka unavailable")));
+
+        assertThrows(CompletionException.class,
+                () -> outboxPublisher.publishPendingEvents());
+
+        entityManager.clear();
+
+        var persistedEvent = outboxEventRepository
+                .findById(savedEvent.getId())
+                .orElseThrow();
+
+        assertNull(persistedEvent.getPublishedAt());
+
+        verify(orderEventProducer)
+                .send(eq(orderId), anyString());
+
+        var pendingEvents = outboxEventRepository
+                .findTop10ByPublishedAtIsNullOrderByCreatedAtAsc();
+
+        assertFalse(pendingEvents.isEmpty());
     }
 }
