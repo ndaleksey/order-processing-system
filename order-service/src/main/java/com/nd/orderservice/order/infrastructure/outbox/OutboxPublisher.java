@@ -3,6 +3,7 @@ package com.nd.orderservice.order.infrastructure.outbox;
 import com.nd.orderservice.order.infrastructure.kafka.OrderEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ public class OutboxPublisher {
     private final OutboxEventRepository outboxEventRepository;
     private final OrderEventProducer orderEventProducer;
 
+    @Scheduled(fixedRate = 10000)
     @SuppressWarnings("unused")
     @Transactional
     public void publishPendingEvents() {
