@@ -1,10 +1,10 @@
 package com.nd.orderservice.order.infrastructure.outbox;
 
 import com.nd.orderservice.order.infrastructure.kafka.OrderEventProducer;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @since 2026
