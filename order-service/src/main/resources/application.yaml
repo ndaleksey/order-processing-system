@@ -35,7 +35,7 @@ management:
 app:
   kafka:
     publication:
-      cron: 0 5 * * * *
+      cron: "*/5 * * * * *"
     topics:
       order-events: order.events
 
