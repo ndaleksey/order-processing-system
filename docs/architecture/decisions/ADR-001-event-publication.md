@@ -1,30 +1,505 @@
-# ADR-001 Event Publication Strategy
+# ADR-001: Публикация доменных событий через Transactional Outbox
 
-## Status
+* **Статус:** принято
+* **Дата:** 2026-08-03
+* **Контекст:** `order-service`
+* **Связанная функциональность:** создание заказа и публикация `OrderCreated`
 
-Accepted
+---
 
-## Context
+## Контекст
 
-After an order is created, the application must notify other components.
+При создании заказа сервис должен:
 
-The messaging technology has not yet been introduced.
+1. сохранить заказ в PostgreSQL;
+2. сформировать событие `OrderCreated`;
+3. доставить событие в Kafka.
 
-## Decision
+PostgreSQL и Kafka являются независимыми системами.
 
-Business logic publishes an OrderCreatedEvent through the OrderEventPublisher abstraction.
+Обычная локальная PostgreSQL-транзакция не может атомарно зафиксировать одновременно:
 
-The current implementation delegates to Spring's ApplicationEventPublisher.
+```text
+INSERT/UPDATE в PostgreSQL
+```
 
-## Consequences
+и:
 
-Advantages
+```text
+публикацию сообщения в Kafka
+```
 
-- Business logic does not know event listeners.
-- Event publication is centralized.
-- Easy migration to Outbox in future sprints.
+Прямой вызов Kafka producer внутри бизнес-операции создаёт риск частичного выполнения.
 
-Disadvantages
+Пример:
 
-- Spring Events work only inside a single JVM.
-- They are not suitable for inter-service communication.
+```text
+Order сохранён
+→ приложение отправляет событие
+→ Kafka недоступна
+→ заказ существует, но событие потеряно
+```
+
+Обратный порядок также небезопасен:
+
+```text
+Kafka приняла событие
+→ сохранение заказа завершилось ошибкой
+→ consumer получил событие о несуществующем заказе
+```
+
+Необходимо обеспечить сохранение заказа и факта необходимости отправить событие в рамках одной PostgreSQL-транзакции.
+
+---
+
+## Решение
+
+Использовать паттерн Transactional Outbox.
+
+При создании заказа в одной PostgreSQL-транзакции сохраняются:
+
+```text
+Order
+```
+
+и:
+
+```text
+OutboxEvent
+```
+
+После commit отдельный publisher периодически выбирает неопубликованные outbox-события и отправляет их в Kafka.
+
+Архитектурный поток:
+
+```text
+POST /orders
+    → OrderService
+    → PostgreSQL transaction
+        → save Order
+        → save OutboxEvent
+    → commit
+
+OutboxPublicationScheduler
+    → OutboxPublisher
+    → OrderEventProducer
+    → Kafka
+    → markPublished()
+    → PostgreSQL commit
+```
+
+---
+
+## Структура outbox-события
+
+Outbox-событие содержит:
+
+```text
+id
+type
+aggregateId
+createdAt
+publishedAt
+payload
+```
+
+Состояние события определяется полем:
+
+```text
+publishedAt
+```
+
+Pending-событие:
+
+```text
+publishedAt == null
+```
+
+Опубликованное событие:
+
+```text
+publishedAt != null
+```
+
+Событие не удаляется сразу после успешной публикации.
+
+Это сохраняет историю, упрощает диагностику и позволяет в будущем реализовать архивирование или retention policy.
+
+---
+
+## Формат Kafka-сообщения
+
+Используется topic:
+
+```text
+order.events
+```
+
+Message key:
+
+```text
+aggregateId.toString()
+```
+
+Message value:
+
+```text
+OutboxEvent.payload
+```
+
+Payload хранится как готовый JSON и не сериализуется publisher повторно.
+
+Использование `aggregateId` как key обеспечивает попадание событий одного заказа в одну partition при неизменном количестве partitions и неизменной стратегии partitioning.
+
+Kafka гарантирует порядок только внутри конкретной partition.
+
+---
+
+## Компоненты решения
+
+### `OrderEventProducer`
+
+Отвечает только за работу с Kafka:
+
+* принимает `aggregateId` и payload;
+* формирует строковый key;
+* вызывает `KafkaTemplate.send(...)`;
+* возвращает `CompletableFuture<SendResult<String, String>>`.
+
+Producer не работает с PostgreSQL и outbox-репозиторием.
+
+---
+
+### `OutboxPublisher`
+
+Отвечает за публикацию pending-событий:
+
+* выбирает до 10 записей;
+* сортирует их по `createdAt`;
+* отправляет каждое событие в Kafka;
+* ожидает результат через `join()`;
+* после подтверждения Kafka вызывает `markPublished()`.
+
+Метод publisher является транзакционным.
+
+Изменение `publishedAt` сохраняется через Hibernate dirty checking.
+
+---
+
+### `OutboxPublicationScheduler`
+
+Отвечает только за периодический запуск publisher.
+
+Scheduler:
+
+* вынесен в отдельный компонент;
+* запускается каждые 5 секунд;
+* читает cron из конфигурации;
+* отключён для профиля `test`.
+
+Конфигурация:
+
+```yaml
+app:
+  kafka:
+    publication:
+      cron: "*/5 * * * * *"
+```
+
+---
+
+## Kafka listeners
+
+Kafka работает в Docker, а `order-service` в локальной среде запускается с хостовой машины.
+
+Используются два listener:
+
+```text
+INTERNAL → kafka:9092
+EXTERNAL → localhost:29092
+```
+
+`INTERNAL` используется контейнерами внутри Docker-сети.
+
+`EXTERNAL` используется приложениями, запущенными из IntelliJ IDEA или локального терминала.
+
+Конфигурация приложения:
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092
+```
+
+Использование `localhost:9092` недопустимо для текущей конфигурации, поскольку этот listener возвращает клиенту advertised address:
+
+```text
+kafka:9092
+```
+
+Hostname `kafka` недоступен приложению, запущенному вне Docker-сети.
+
+---
+
+## Гарантия доставки
+
+Решение обеспечивает:
+
+```text
+at-least-once delivery
+```
+
+Система предпочитает повторную доставку потере сообщения.
+
+Возможный сценарий дублирования:
+
+```text
+Kafka приняла событие
+→ приложение завершилось до сохранения publishedAt
+→ событие осталось pending
+→ publisher отправил его повторно
+```
+
+Transactional Outbox не обеспечивает exactly-once delivery между PostgreSQL и Kafka.
+
+Будущие consumers должны быть идемпотентными.
+
+---
+
+## Поведение при ошибке
+
+При ошибке Kafka:
+
+```text
+Kafka send future завершается exceptionally
+→ join() выбрасывает CompletionException
+→ PostgreSQL-транзакция publisher откатывается
+→ publishedAt остаётся null
+→ событие доступно для следующего polling cycle
+```
+
+Ошибка не маскируется как успешная публикация.
+
+---
+
+## Границы транзакции
+
+Текущая реализация использует одну PostgreSQL-транзакцию для всей выбранной пачки событий.
+
+Пример:
+
+```text
+event-1 → отправлен успешно
+event-2 → отправлен успешно
+event-3 → ошибка
+```
+
+Kafka уже может содержать `event-1` и `event-2`, но PostgreSQL-транзакция откатит `publishedAt` всех событий.
+
+На следующем polling cycle первые два события будут отправлены повторно.
+
+Это допустимо для at-least-once, но увеличивает вероятность дубликатов.
+
+---
+
+## Почему используется блокирующий `join()`
+
+Kafka producer работает асинхронно.
+
+`join()` выбран для первой реализации, потому что он:
+
+* делает последовательность обработки понятной;
+* позволяет установить `publishedAt` только после Kafka acknowledgement;
+* естественно передаёт ошибку наружу через `CompletionException`;
+* упрощает транзакционное поведение.
+
+Недостатки:
+
+* поток scheduler блокируется;
+* PostgreSQL-транзакция остаётся открытой во время ожидания Kafka;
+* соединение с БД удерживается дольше;
+* события внутри пачки обрабатываются последовательно;
+* ошибка одного события откатывает состояние всей пачки.
+
+---
+
+## Рассмотренные альтернативы
+
+### Прямая отправка в Kafka при создании заказа
+
+Отклонено.
+
+Причина: невозможно атомарно зафиксировать PostgreSQL и Kafka обычной локальной транзакцией.
+
+---
+
+### Асинхронный callback через `thenAccept`
+
+Отложено.
+
+Сам по себе callback не решает:
+
+* сохранение `publishedAt`;
+* управление persistence context;
+* повторный выбор событий;
+* конкуренцию publisher-инстансов;
+* транзакционные границы.
+
+Для корректной реализации потребовался бы claim-механизм или отдельные транзакции обновления статуса.
+
+---
+
+### Параллельная публикация пачки через `CompletableFuture.allOf`
+
+Отложено.
+
+Требует обработки:
+
+* частично успешной пачки;
+* независимого сохранения результатов;
+* claim-состояний;
+* повторных попыток;
+* ограничений параллелизма.
+
+---
+
+### Kafka transactions
+
+Отклонено как основное решение.
+
+Kafka transaction не делает PostgreSQL и Kafka одной общей транзакцией.
+
+Она может обеспечить атомарность операций внутри Kafka, но не атомарный commit бизнес-данных PostgreSQL вместе с Kafka send.
+
+---
+
+### CDC через Debezium
+
+Отложено.
+
+Преимущества:
+
+* отсутствие периодического polling;
+* чтение PostgreSQL WAL;
+* хорошая масштабируемость;
+* отделение доставки от бизнес-приложения.
+
+Недостатки:
+
+* дополнительная инфраструктура;
+* Kafka Connect;
+* Debezium;
+* усложнение локальной разработки и эксплуатации.
+
+Для учебного этапа выбран polling publisher.
+
+---
+
+### Распределённая транзакция XA/2PC
+
+Отклонено.
+
+Причины:
+
+* высокая сложность;
+* тесная связанность систем;
+* эксплуатационные риски;
+* недостаточная поддержка и практическая ценность для текущего проекта;
+* несоответствие типичному подходу микросервисной архитектуры.
+
+---
+
+## Последствия решения
+
+### Положительные
+
+* заказ и outbox-событие сохраняются атомарно;
+* событие не теряется при временной недоступности Kafka;
+* повторная отправка происходит автоматически;
+* бизнес-операция создания заказа не зависит от доступности Kafka;
+* Kafka-код изолирован в infrastructure layer;
+* решение покрыто unit- и integration-тестами;
+* поведение при ошибке явно проверено;
+* cron вынесен в конфигурацию;
+* scheduler не мешает интеграционным тестам.
+
+### Отрицательные
+
+* возможны дубликаты;
+* consumers должны быть идемпотентными;
+* publisher выполняет polling PostgreSQL;
+* транзакция остаётся открытой во время Kafka send;
+* пачка обрабатывается последовательно;
+* ошибка одного события откатывает состояние всей пачки;
+* текущая версия не поддерживает безопасную конкуренцию нескольких publisher-инстансов.
+
+---
+
+## Ограничения
+
+Текущая реализация не поддерживает:
+
+* несколько одновременно работающих publisher-инстансов;
+* блокировку записей через `FOR UPDATE SKIP LOCKED`;
+* состояние `PROCESSING`;
+* lease и timeout;
+* автоматическое восстановление зависших событий;
+* отдельную транзакцию на событие;
+* распределённую блокировку scheduler;
+* retry с backoff;
+* Dead Letter Queue;
+* Schema Registry;
+* CDC;
+* автоматическое архивирование;
+* метрики backlog и publication latency;
+* consumer deduplication.
+
+---
+
+## Дальнейшее развитие
+
+При росте нагрузки следует рассмотреть:
+
+1. отдельную короткую транзакцию на каждое событие;
+2. claim-состояния `NEW`, `PROCESSING`, `PUBLISHED`;
+3. `FOR UPDATE SKIP LOCKED`;
+4. retry count и `nextAttemptAt`;
+5. exponential backoff;
+6. Dead Letter Queue;
+7. идемпотентность consumer по `eventId`;
+8. отдельный relay-сервис;
+9. Debezium и Kafka Connect;
+10. метрики размера outbox backlog;
+11. метрики времени от `createdAt` до `publishedAt`;
+12. distributed tracing.
+
+---
+
+## Проверка решения
+
+Реализованы тесты:
+
+* producer передаёт правильные topic, key и payload;
+* successful Kafka send приводит к `publishedAt != null`;
+* failed Kafka send оставляет `publishedAt == null`;
+* ошибка Kafka вызывает rollback;
+* pending-событие повторно выбирается после ошибки;
+* scheduler не запускается в тестовом профиле.
+
+Полный набор Maven-тестов проходит успешно.
+
+---
+
+## Итог
+
+Для публикации событий заказов принято решение использовать:
+
+```text
+Transactional Outbox
++ PostgreSQL polling
++ Spring Scheduler
++ KafkaTemplate
++ at-least-once delivery
+```
+
+Решение достаточно для текущего учебного этапа и явно фиксирует необходимость идемпотентных consumers и дальнейшего развития механизма при масштабировании.

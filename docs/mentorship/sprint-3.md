@@ -2,7 +2,7 @@
 
 ## Статус
 
-**В работе.**
+**Завершён.**
 
 Рабочая ветка:
 
@@ -10,28 +10,26 @@
 feature/outbox-publisher
 ```
 
-Спринт начинается после завершения:
+Результат спринта смержен в:
 
-* создания заказа;
-* внутрипроцессного `OrderCreatedEvent`;
-* сохранения заказа и outbox-события в одной PostgreSQL-транзакции;
-* добавления состояния публикации `publishedAt`;
-* repository-запроса неопубликованных событий;
-* интеграционного теста репозитория.
+```text
+main
+```
 
 ---
 
-## Цель
+## Цель спринта
 
-Реализовать надёжную доставку сохранённых outbox-событий из `order-service` в Kafka.
+Реализовать доставку сохранённых outbox-событий из `order-service` в Kafka.
 
-К завершению спринта должен работать сценарий:
+Итоговый сценарий:
 
 ```text
 POST /orders
     → Order и OutboxEvent сохраняются в PostgreSQL
+    → OutboxPublicationScheduler периодически запускает publisher
     → OutboxPublisher выбирает неопубликованные события
-    → Kafka Producer отправляет событие OrderCreated
+    → OrderEventProducer отправляет событие в Kafka
     → Kafka подтверждает приём сообщения
     → OutboxEvent получает publishedAt
 ```
@@ -42,438 +40,506 @@ POST /orders
 POST /orders
     → Order и OutboxEvent сохраняются
     → попытка публикации завершается ошибкой
+    → транзакция publisher откатывается
     → publishedAt остаётся null
-    → следующая попытка повторно отправляет событие
+    → событие выбирается при следующем polling cycle
 ```
 
 ---
 
-## Инженерная проблема
+## Реализованные компоненты
 
-Создание заказа и публикация Kafka-сообщения являются двумя отдельными операциями в разных системах:
-
-* PostgreSQL;
-* Kafka.
-
-Обычная PostgreSQL-транзакция не может атомарно зафиксировать изменения одновременно в базе данных и Kafka.
-
-Прямой сценарий:
-
-```text
-save(order)
-sendToKafka(event)
-```
-
-может завершиться частично:
-
-1. Заказ сохранён, но Kafka недоступна.
-2. Kafka приняла событие, но приложение завершилось до фиксации результата.
-3. Повторная попытка отправляет событие второй раз.
-4. Несколько экземпляров publisher могут выбрать одну запись.
-
-Transactional Outbox решает проблему сохранения бизнес-данных и события, но сам по себе не гарантирует внешнюю доставку. Для доставки необходим отдельный publisher.
-
----
-
-# Теория спринта
-
-Необходимо изучить и уметь объяснить:
-
-* Kafka broker;
-* topic;
-* partition;
-* message key;
-* offset;
-* producer;
-* producer acknowledgements;
-* сериализация key и value;
-* асинхронная отправка;
-* `KafkaTemplate`;
-* результат отправки;
-* at-most-once;
-* at-least-once;
-* exactly-once semantics;
-* причины повторной доставки;
-* polling publisher;
-* scheduled tasks;
-* границы PostgreSQL-транзакции;
-* роль `publishedAt`;
-* retry после ошибки;
-* идемпотентность будущего consumer.
-
----
-
-# Основные архитектурные решения
-
-## Формат сообщения
-
-На текущем этапе:
-
-* key — `aggregateId`, преобразованный в строку;
-* value — готовый JSON из `OutboxEvent.payload`;
-* topic — конфигурационное свойство;
-* тип события хранится в outbox.
-
-Использование `aggregateId` как key позволяет событиям одного заказа попадать в одну partition при неизменном количестве partitions.
-
-Это даёт порядок сообщений в пределах одного заказа, но не глобальный порядок всех событий.
-
----
-
-## Состояние outbox-события
-
-Событие считается неопубликованным, когда:
-
-```text
-publishedAt == null
-```
-
-Событие считается успешно опубликованным, когда:
-
-```text
-publishedAt != null
-```
-
-Метод изменения состояния:
-
-```java
-markPublished()
-```
-
-должен вызываться только после подтверждения успешной отправки Kafka.
-
----
-
-## Гарантия доставки
-
-Учебная реализация обеспечивает:
-
-```text
-at-least-once
-```
-
-Событие может быть отправлено повторно в следующем сценарии:
-
-```text
-Kafka приняла сообщение
-    → приложение завершилось
-    → publishedAt не был сохранён
-    → после перезапуска событие выбрано повторно
-```
-
-Следовательно, будущий consumer обязан быть идемпотентным.
-
----
-
-# План реализации
-
-## Этап 1. Kafka Producer
-
-### Задачи
-
-* добавить зависимость Spring Kafka;
-* настроить `bootstrap-servers`;
-* настроить serializers;
-* установить `acks=all`;
-* вынести название topic в конфигурацию;
-* создать компонент отправки сообщений;
-* отправлять строковый key и JSON payload;
-* возвращать результат асинхронной отправки.
-
-### Предлагаемые классы
-
-#### `KafkaTopicsProperties`
-
-Модуль:
-
-```text
-order-service
-```
+### `KafkaTopicsProperties`
 
 Путь:
 
 ```text
-src/main/java/com/nd/orderservice/order/infrastructure/kafka/KafkaTopicsProperties.java
-```
-
-Пакет:
-
-```java
-com.nd.orderservice.order.infrastructure.kafka
+order-service/src/main/java/com/nd/orderservice/order/infrastructure/kafka/KafkaTopicsProperties.java
 ```
 
 Ответственность:
 
-* читать свойства `app.kafka.topics`;
-* предоставлять имя topic событий заказов;
-* не содержать бизнес-логику;
-* не отправлять сообщения.
+* чтение Kafka topic из конфигурации;
+* предоставление имени topic для событий заказов;
+* отсутствие бизнес-логики.
 
-#### `OrderEventProducer`
+Конфигурационное свойство:
+
+```yaml
+app:
+  kafka:
+    topics:
+      order-events: order.events
+```
+
+---
+
+### `OrderEventProducer`
 
 Путь:
 
 ```text
-src/main/java/com/nd/orderservice/order/infrastructure/kafka/OrderEventProducer.java
-```
-
-Пакет:
-
-```java
-com.nd.orderservice.order.infrastructure.kafka
+order-service/src/main/java/com/nd/orderservice/order/infrastructure/kafka/OrderEventProducer.java
 ```
 
 Ответственность:
 
 * принимать `aggregateId` и JSON payload;
-* преобразовывать `aggregateId` в Kafka key;
-* вызывать `KafkaTemplate.send(...)`;
-* возвращать результат отправки;
-* не работать напрямую с outbox-репозиторием.
+* использовать `aggregateId` как Kafka message key;
+* отправлять сообщение через `KafkaTemplate`;
+* возвращать `CompletableFuture<SendResult<String, String>>`;
+* не работать с outbox-репозиторием.
+
+Формат сообщения:
+
+```text
+topic = order.events
+key   = aggregateId.toString()
+value = OutboxEvent.payload
+```
+
+Использование `aggregateId` как key позволяет событиям одного заказа попадать в одну partition при неизменном количестве partitions и неизменной стратегии partitioning.
+
+Порядок гарантируется только внутри одной partition, а не глобально для всего topic.
 
 ---
 
-## Этап 2. Ручная проверка Kafka Producer
-
-Необходимо:
-
-* запустить Kafka;
-* создать topic;
-* запустить console consumer;
-* отправить тестовое сообщение;
-* увидеть key и payload;
-* убедиться, что producer получает успешный результат.
-
-Результат этапа должен быть воспроизводим без outbox scheduler.
-
----
-
-## Этап 3. Outbox Publisher
-
-### Предлагаемый класс
-
-#### `OutboxPublisher`
+### `OutboxPublisher`
 
 Путь:
 
 ```text
-src/main/java/com/nd/orderservice/order/infrastructure/outbox/OutboxPublisher.java
-```
-
-Пакет:
-
-```java
-com.nd.orderservice.order.infrastructure.outbox
+order-service/src/main/java/com/nd/orderservice/order/infrastructure/outbox/OutboxPublisher.java
 ```
 
 Ответственность:
 
-* получить ограниченную пачку неопубликованных событий;
+* выбрать до 10 неопубликованных outbox-событий;
+* обрабатывать их в порядке `createdAt`;
 * передать каждое событие в `OrderEventProducer`;
-* дождаться результата публикации;
-* вызвать `markPublished()` после успеха;
-* сохранить изменённое состояние;
-* не помечать событие опубликованным при ошибке.
+* дождаться результата отправки через `CompletableFuture.join()`;
+* установить `publishedAt` только после успешного подтверждения Kafka;
+* оставить событие неопубликованным при ошибке.
 
-Publisher не должен:
+Метод публикации выполняется в PostgreSQL-транзакции:
 
-* создавать новые бизнес-события;
-* повторно сериализовать payload;
-* изменять заказ;
-* содержать Kafka properties;
-* удалять outbox-записи.
+```java
+@Transactional
+public void publishPendingEvents()
+```
 
----
+После успешной отправки вызывается:
 
-## Этап 4. Scheduled polling
+```java
+event.markPublished();
+```
 
-Необходимо:
-
-* включить scheduling;
-* настроить интервал через configuration property;
-* периодически запускать publisher;
-* не запускать новый цикл чаще, чем требуется учебному проекту;
-* логировать успешные и неуспешные попытки.
-
-Интервал не должен быть жёстко зашит в Java-код.
+Отдельный вызов `repository.save(...)` не требуется, поскольку сущность остаётся managed внутри транзакции, а Hibernate сохраняет изменение через dirty checking.
 
 ---
 
-## Этап 5. Проверка отказа Kafka
+### `OutboxPublicationScheduler`
 
-Сценарий:
+Путь:
 
-1. Остановить Kafka.
-2. Создать заказ.
-3. Убедиться, что заказ сохранён.
-4. Убедиться, что outbox-событие существует.
-5. Убедиться, что `publishedAt == null`.
-6. Запустить Kafka.
-7. Дождаться следующего запуска publisher.
-8. Убедиться, что сообщение появилось в topic.
-9. Убедиться, что `publishedAt` заполнен.
+```text
+order-service/src/main/java/com/nd/orderservice/order/infrastructure/outbox/OutboxPublicationScheduler.java
+```
+
+Scheduler вынесен в отдельный компонент и не содержит логики публикации.
+
+Его ответственность:
+
+* запускать `OutboxPublisher`;
+* читать cron из конфигурации;
+* не управлять транзакцией и состоянием событий.
+
+Runtime-конфигурация:
+
+```yaml
+app:
+  kafka:
+    publication:
+      cron: "*/5 * * * * *"
+```
+
+Publisher запускается каждые 5 секунд.
+
+Для тестового профиля scheduler отключён:
+
+```java
+@Profile("!test")
+```
+
+Это предотвращает фоновые вызовы publisher во время интеграционных тестов.
 
 ---
 
-# Тестирование
+## Kafka-конфигурация
 
-## Unit или component test producer
+Приложение запускается на хостовой машине, а Kafka работает в Docker.
+
+Для подключения используется внешний listener:
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092
+```
+
+Внутренний listener:
+
+```text
+kafka:9092
+```
+
+предназначен для сервисов, запущенных внутри Docker-сети.
+
+Внешний listener:
+
+```text
+localhost:29092
+```
+
+предназначен для приложений, запущенных из IntelliJ IDEA или локального терминала.
+
+Producer настроен с:
+
+```yaml
+spring:
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+```
+
+`acks=all` означает, что producer ожидает подтверждения от всех требуемых in-sync replicas согласно конфигурации Kafka topic.
+
+---
+
+## Гарантия доставки
+
+Текущая реализация обеспечивает семантику:
+
+```text
+at-least-once
+```
+
+Система стремится не потерять событие, но допускает повторную публикацию.
+
+Возможный сценарий дублирования:
+
+```text
+Kafka приняла сообщение
+    → приложение завершилось
+    → PostgreSQL-транзакция не успела сохранить publishedAt
+    → после перезапуска событие снова выбрано publisher
+    → сообщение отправлено повторно
+```
+
+Следовательно, будущий consumer должен быть идемпотентным.
+
+Для дедупликации consumer сможет использовать идентификатор события, сохранённый в payload или отдельном message header.
+
+Transactional Outbox сам по себе не обеспечивает exactly-once delivery между PostgreSQL и Kafka.
+
+---
+
+## Поведение транзакции
+
+В текущей версии одна PostgreSQL-транзакция охватывает обработку всей выбранной пачки.
+
+Пример:
+
+```text
+event-1 → Kafka успешно
+event-2 → Kafka успешно
+event-3 → Kafka ошибка
+```
+
+Результат:
+
+```text
+Kafka:
+event-1 опубликован
+event-2 опубликован
+event-3 не опубликован
+
+PostgreSQL:
+транзакция откатилась
+publishedAt у всех трёх остался null
+```
+
+При следующем polling cycle `event-1` и `event-2` могут быть отправлены повторно.
+
+Это соответствует at-least-once, но увеличивает вероятность дубликатов.
+
+---
+
+## Почему используется `join()`
+
+`KafkaTemplate.send(...)` выполняет отправку асинхронно и возвращает `CompletableFuture`.
+
+В publisher используется:
+
+```java
+orderEventProducer.send(...).join();
+```
+
+`join()`:
+
+* не делает внутреннюю работу Kafka producer синхронной;
+* блокирует поток scheduler до завершения отправки;
+* позволяет выполнить `markPublished()` только после успешного результата;
+* преобразует ошибочное завершение в `CompletionException`.
+
+Такой подход выбран для учебной реализации из-за простоты и понятных границ поведения.
+
+Ограничение: PostgreSQL-транзакция и соединение с БД остаются открытыми, пока поток ожидает ответ Kafka.
+
+---
+
+## Реализованные тесты
+
+### Unit test `OrderEventProducer`
 
 Проверяет:
 
 * правильное имя topic;
-* key равен строковому `aggregateId`;
-* value равен переданному payload;
-* результат `KafkaTemplate.send()` возвращается вызывающему коду.
-
-Для этого теста Kafka может быть заменена mock-объектом.
+* использование `aggregateId` как key;
+* передачу исходного payload;
+* возврат future, полученного от `KafkaTemplate.send(...)`.
 
 ---
 
-## Тест успешного Outbox Publisher
+### Unit tests `OutboxPublisher`
+
+Успешный сценарий проверяет:
+
+```text
+успешный Kafka send
+→ markPublished()
+→ publishedAt != null
+```
+
+Ошибочный сценарий проверяет:
+
+```text
+failed CompletableFuture
+→ CompletionException
+→ publishedAt == null
+```
+
+---
+
+### Integration test успешной публикации
 
 Проверяет:
 
-* repository возвращает неопубликованное событие;
-* producer вызывается с правильными параметрами;
-* после успешной отправки вызывается `markPublished()`;
-* изменённое событие сохраняется;
-* `publishedAt` становится ненулевым.
+* сохранение реального `OutboxEvent` в PostgreSQL;
+* запуск настоящего `OutboxPublisher`;
+* mock только для `OrderEventProducer`;
+* сохранение `publishedAt` через dirty checking;
+* отсутствие события в запросе pending-событий.
+
+После публикации сущность повторно загружается из БД через `findById(...)`.
 
 ---
 
-## Тест ошибки публикации
+### Integration test ошибки Kafka
 
 Проверяет:
 
-* producer завершает отправку ошибкой;
-* событие не помечается опубликованным;
-* `publishedAt` остаётся `null`;
-* событие будет доступно следующему polling cycle;
-* ошибка не маскируется как успешная публикация.
+* ошибочное завершение Kafka future;
+* выбрасывание `CompletionException`;
+* rollback транзакции publisher;
+* сохранение `publishedAt == null`;
+* повторное попадание того же события в pending-выборку.
 
 ---
 
-## Integration test
+## Ручная проверка
 
-При наличии разумного времени:
+Проверен следующий сценарий:
 
-* поднять Kafka через Testcontainers или использовать локальную Kafka;
-* отправить реальное сообщение;
-* прочитать сообщение consumer;
-* проверить key и payload.
-
-Полная Testcontainers-инфраструктура не должна задерживать основной рабочий сценарий спринта.
-
----
-
-# Definition of Done
-
-Спринт завершён, когда:
-
-* Kafka dependency добавлена;
-* Kafka producer настроен;
-* имя topic хранится в конфигурации;
-* `OrderEventProducer` отправляет key и payload;
-* `OutboxPublisher` получает неопубликованные события;
-* событие помечается опубликованным только после успеха;
-* при ошибке `publishedAt` остаётся `null`;
-* scheduler запускает polling;
-* сообщение видно в Kafka;
-* остановка и повторный запуск Kafka приводят к повторной отправке;
-* реализованы тесты успешного и ошибочного сценариев;
-* все тесты проекта проходят;
-* сценарий ручной проверки документирован;
-* ученик может объяснить гарантию at-least-once.
+1. Запущены PostgreSQL и Kafka.
+2. `order-service` подключён к Kafka через `localhost:29092`.
+3. Создан заказ.
+4. В PostgreSQL появилась запись `OutboxEvent` с `publishedAt == null`.
+5. Scheduler запустил publisher.
+6. Producer отправил сообщение в topic `order.events`.
+7. После подтверждения Kafka значение `publishedAt` было сохранено.
+8. Все Maven-тесты проекта завершились успешно.
 
 ---
 
-# Вопросы для собеседования
+## Что изучено
 
-* Какую проблему решает Transactional Outbox?
-* Почему сохранение outbox-записи ещё не означает доставку события?
-* Почему PostgreSQL-транзакция не включает Kafka?
-* Что такое Kafka topic?
-* Что такое partition?
-* Для чего используется message key?
-* Гарантирует ли Kafka глобальный порядок сообщений?
-* Что означает `acks=all`?
-* Является ли `KafkaTemplate.send()` синхронным?
-* В какой момент нужно устанавливать `publishedAt`?
-* Почему нельзя установить `publishedAt` до отправки?
-* Почему реализация имеет гарантию at-least-once?
-* В каком сценарии событие отправляется повторно?
-* Что должен сделать consumer для защиты от дубликатов?
-* Что произойдёт при изменении количества partitions?
-* Чем retry producer отличается от повторного polling outbox?
-* Почему опубликованные outbox-записи сразу не удаляются?
+В рамках спринта разобраны:
+
+* Kafka broker;
+* topic;
+* partition;
+* offset;
+* message key;
+* producer;
+* `KafkaTemplate`;
+* асинхронная отправка;
+* `CompletableFuture`;
+* `join()`;
+* producer acknowledgements;
+* `acks=all`;
+* internal и external Kafka listeners;
+* polling publisher;
+* Spring Scheduler;
+* dirty checking;
+* границы PostgreSQL-транзакции;
+* at-most-once;
+* at-least-once;
+* exactly-once semantics;
+* повторная доставка;
+* идемпотентность consumer;
+* ограничения простой реализации Transactional Outbox.
 
 ---
 
-# Ограничения учебной реализации
+## Ограничения текущей реализации
 
-В рамках спринта не требуется реализовывать:
+В текущей версии не реализованы:
 
-* несколько конкурирующих экземпляров publisher;
-* `FOR UPDATE SKIP LOCKED`;
-* lease-механизм;
+* конкурентная работа нескольких экземпляров publisher;
+* `SELECT ... FOR UPDATE SKIP LOCKED`;
 * состояние `PROCESSING`;
+* lease-механизм;
 * восстановление зависших событий;
+* отдельная транзакция на каждое событие;
+* параллельная асинхронная публикация пачки;
+* retry policy с backoff;
+* Dead Letter Queue;
 * Kafka transactions;
-* schema registry;
-* tracing;
-* архивирование outbox;
-* production retention policy.
-
-Необходимо понимать, зачем эти механизмы могут потребоваться, но их реализация переносится за пределы текущего спринта.
-
----
-
-# Checklist code review
-
-* Kafka API находится в infrastructure layer.
-* Application layer не зависит от `KafkaTemplate`.
-* Topic не зашит строкой в нескольких классах.
-* Producer не работает с repository.
-* Publisher не сериализует payload повторно.
-* Kafka key основан на `aggregateId`.
-* Результат асинхронной отправки не игнорируется.
-* `publishedAt` устанавливается только после успеха.
-* Ошибка публикации не приводит к ложному успешному состоянию.
-* Scheduler interval задаётся конфигурацией.
-* Тесты проверяют поведение, а не private methods.
-* Логи содержат event id и aggregate id.
-* Тесты используют профиль `test`.
-* Код компилируется и запускается.
+* Debezium или другой CDC-механизм;
+* Schema Registry;
+* consumer idempotency;
+* автоматическое архивирование outbox;
+* retention policy;
+* distributed lock для scheduler;
+* метрики publisher;
+* distributed tracing.
 
 ---
 
-# Завершение спринта
+## Возможные следующие улучшения
 
-Перед merge необходимо:
+### Отдельная транзакция на событие
 
-1. Запустить все тесты.
-2. Проверить успешную публикацию.
-3. Проверить сценарий недоступной Kafka.
-4. Проверить повторную отправку после запуска Kafka.
-5. Провести code review.
-6. Обновить этот файл фактическими результатами.
-7. Изменить статус на `Завершён`.
-8. Зафиксировать известные ограничения.
-9. Создать файл следующего спринта.
+Каждое событие может обрабатываться независимо, чтобы ошибка одного события не откатывала `publishedAt` ранее успешно отправленных событий.
+
+При реализации необходимо учитывать Spring proxy и проблему self-invocation.
 
 ---
 
-# Следующий спринт
+### Claim-механизм
 
-## Спринт 4. Payment Service и Kafka Consumer
+Перед отправкой событие может переводиться:
 
-План следующего спринта:
+```text
+NEW → PROCESSING → PUBLISHED
+```
 
-* создать `payment-service`;
-* настроить отдельную PostgreSQL-базу;
-* подписаться на `OrderCreated`;
-* сохранять платёж;
-* обеспечить идемпотентность;
-* публиковать `PaymentSucceeded` или `PaymentFailed`;
-* настроить retry и Dead Letter Topic.
+Это уменьшит риск одновременной обработки одной записи несколькими publisher-инстансами.
+
+---
+
+### Блокировки БД
+
+Для нескольких экземпляров publisher может использоваться:
+
+```sql
+FOR UPDATE SKIP LOCKED
+```
+
+Каждый экземпляр будет получать отдельный набор событий.
+
+---
+
+### CDC
+
+Вместо polling можно использовать Debezium и Kafka Connect для чтения изменений PostgreSQL WAL.
+
+Такой подход уменьшает количество polling-запросов, но требует дополнительной инфраструктуры.
+
+---
+
+## Definition of Done
+
+* [x] Добавлена зависимость Spring Kafka.
+* [x] Настроен Kafka producer.
+* [x] Название topic вынесено в конфигурацию.
+* [x] `aggregateId` используется как message key.
+* [x] Payload публикуется без повторной сериализации.
+* [x] Реализован `OrderEventProducer`.
+* [x] Реализован `OutboxPublisher`.
+* [x] Publisher выбирает ограниченную пачку pending-событий.
+* [x] Publisher ожидает результат Kafka send.
+* [x] `publishedAt` устанавливается только после успешной отправки.
+* [x] При ошибке `publishedAt` остаётся `null`.
+* [x] Реализован `OutboxPublicationScheduler`.
+* [x] Интервал scheduler вынесен в конфигурацию.
+* [x] Scheduler отключён в профиле `test`.
+* [x] Настроен external Kafka listener для локального приложения.
+* [x] Реализованы unit-тесты producer.
+* [x] Реализованы unit-тесты publisher.
+* [x] Реализованы integration-тесты publisher.
+* [x] Проверен rollback при ошибке Kafka.
+* [x] Все Maven-тесты проходят.
+* [x] Понятна гарантия at-least-once.
+* [x] Зафиксированы ограничения реализации.
+
+---
+
+## Контрольные вопросы
+
+1. Какую проблему решает Transactional Outbox?
+2. Почему сохранение outbox-записи ещё не означает доставку события?
+3. Почему PostgreSQL-транзакция не может атомарно включить Kafka?
+4. Что такое Kafka topic?
+5. Что такое partition?
+6. Почему offset уникален только внутри partition?
+7. Для чего используется message key?
+8. Почему `aggregateId` подходит в качестве key?
+9. Гарантирует ли Kafka глобальный порядок сообщений?
+10. Что означает `acks=all`?
+11. Почему `KafkaTemplate.send()` возвращает `CompletableFuture`?
+12. Что делает `join()`?
+13. Почему `join()` может выбросить `CompletionException`?
+14. В какой момент нужно устанавливать `publishedAt`?
+15. Почему нельзя установить `publishedAt` перед отправкой?
+16. Почему текущая реализация имеет гарантию at-least-once?
+17. В каком сценарии сообщение будет опубликовано повторно?
+18. Почему consumer должен быть идемпотентным?
+19. Почему одна транзакция на всю пачку увеличивает количество дубликатов?
+20. Чем polling отличается от CDC?
+21. Для чего нужен `FOR UPDATE SKIP LOCKED`?
+22. Почему scheduler вынесен в отдельный класс?
+23. Зачем scheduler отключается в профиле `test`?
+24. Чем Kafka internal listener отличается от external listener?
+25. Почему приложение с хоста использует `localhost:29092`, а не `kafka:9092`?
+
+---
+
+## Итог спринта
+
+В `order-service` реализована рабочая цепочка доставки событий:
+
+```text
+PostgreSQL Outbox
+    → scheduled polling
+    → Kafka Producer
+    → Kafka acknowledgement
+    → publishedAt
+```
+
+Реализация покрыта unit- и integration-тестами и обеспечивает доставку с семантикой at-least-once.
+
+Основное архитектурное ограничение текущего решения — блокирующее ожидание Kafka внутри PostgreSQL-транзакции и возможная повторная отправка ранее успешно опубликованных сообщений при rollback всей пачки.
