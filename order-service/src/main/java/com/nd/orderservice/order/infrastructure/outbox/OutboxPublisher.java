@@ -17,7 +17,7 @@ public class OutboxPublisher {
     private final OutboxEventRepository outboxEventRepository;
     private final OrderEventProducer orderEventProducer;
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(cron = "${app.kafka.publication.cron}")
     @SuppressWarnings("unused")
     @Transactional
     public void publishPendingEvents() {
