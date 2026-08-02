@@ -15,6 +15,13 @@ spring:
 
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+
 
 server:
   port: 8080
@@ -24,3 +31,11 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+
+app:
+  kafka:
+    publication:
+      cron: "*/5 * * * * *"
+    topics:
+      order-events: order.events
+

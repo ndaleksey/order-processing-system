@@ -1,219 +1,808 @@
-# Java Middle+/Senior Interview Mentorship Roadmap
+# Дорожная карта подготовки Java Middle+/Senior
 
-## Goal
+## 1. Цель
 
-Prepare for Java Middle+/Senior interviews in 6 weeks using this project as the main practice field.
+За четыре недели подготовиться к собеседованиям на позиции Java Middle+/Senior, используя проект `order-processing-system` как основную практическую площадку.
 
-The target stack is Java 21, Spring Boot, Hibernate, PostgreSQL, Kafka, Docker, Redis, and microservice architecture patterns.
+Период обучения:
 
-The working ratio is 40% theory and 60% practice.
+* начало: 31 июля 2026 года;
+* завершение основного плана: 27 августа 2026 года;
+* продолжительность: 4 недели;
+* предполагаемая нагрузка: 2–3 часа в учебный день.
 
-The teaching approach is problem-first: start from a concrete engineering problem, identify the trade-offs, then introduce the minimum required tool or pattern.
+Основной результат — не формальное прохождение максимального количества технологий, а создание законченного и проверяемого микросервисного сценария, который можно:
 
-## Mentor Role
+* запустить локально;
+* протестировать;
+* показать в GitHub;
+* объяснить на собеседовании;
+* использовать для обсуждения архитектурных решений и компромиссов.
 
-The mentor acts as:
+Целевой стек:
 
-- technical mentor for theory and interview preparation;
-- team lead for scope control and sprint planning;
-- code reviewer for design, maintainability, and production readiness;
-- interviewer for mock questions and trade-off discussions.
+* Java 21;
+* Spring Boot;
+* Spring MVC;
+* Hibernate и Spring Data JPA;
+* PostgreSQL;
+* Kafka;
+* Redis;
+* Docker и Docker Compose;
+* микросервисные архитектурные паттерны.
 
-## Core Engineering Themes
+Рабочее соотношение:
 
-- How to keep API contracts explicit and stable: Spring MVC, DTOs, validation.
-- How to prevent invalid business state: aggregate roots, invariants, Java 21 records where useful.
-- How to persist data safely: Hibernate, JPA lifecycle, transactions, locking, migrations.
-- How to understand slow or unsafe SQL: PostgreSQL ACID, indexes, isolation, `EXPLAIN ANALYZE`.
-- How to make services communicate reliably: Kafka, retries, DLQ, idempotent consumers.
-- How to keep data consistent across services: Saga, Transactional Outbox, eventual consistency.
-- How to make local development reproducible: Docker Compose and service configuration.
-- How to reduce load and handle duplicate requests: Redis caching and idempotency keys.
-- How to reason about concurrent code: executors, locks, atomics, race conditions.
+* 40% — теория, обсуждение решений и вопросы собеседований;
+* 60% — проектирование, написание кода, тестирование и разбор результатов.
 
-## Sprint Structure
+---
 
-Each sprint has:
+## 2. Формат обучения
 
-- objective;
-- theory topics;
-- practical tasks;
-- definition of done;
-- code review checklist;
-- interview questions.
+Используется problem-first подход:
 
-Overtime rule: if a sprint task does not fit the sprint budget, reduce scope before adding complexity.
+1. Формулируется инженерная проблема.
+2. Разбираются возможные решения.
+3. Обсуждаются преимущества, недостатки и ограничения вариантов.
+4. Выбирается минимально достаточное решение.
+5. Реализуется законченный рабочий инкремент.
+6. Добавляются тесты или воспроизводимый сценарий проверки.
+7. Проводится code review.
+8. Тема закрепляется вопросами уровня собеседования.
 
-## Six-Week Plan
+### Распределение работы с кодом
 
-### Week 1: Order Service Foundation
+Ключевую бизнес-логику и архитектурно значимые решения ученик реализует самостоятельно.
 
-Objective: turn the current skeleton into a working REST service.
+Готовый или почти готовый код может предоставляться для:
 
-Problem:
+* Maven-зависимостей;
+* типовой конфигурации Spring;
+* Kafka serializers и deserializers;
+* стандартной настройки Docker;
+* инфраструктурного boilerplate;
+* Testcontainers;
+* конфигурационных файлов, не содержащих основной изучаемой идеи.
 
-- clients need to create and read orders through a stable API;
-- invalid requests must not corrupt the domain model;
-- business logic must not leak into controllers.
+В GitHub попадает только законченный код.
 
-Minimum tools:
+---
 
-- layered architecture versus hexagonal architecture;
-- Spring MVC request lifecycle;
-- DTO boundaries and validation;
-- transaction boundary placement;
-- domain invariants.
+## 3. Definition of Done
 
-Practice:
+Задача считается завершённой, когда:
 
-- implement `POST /orders`;
-- implement `GET /orders/{id}`;
-- add request and response DTOs;
-- add validation and error handling;
-- add service-layer transaction;
-- add unit and slice tests.
+* проект компилируется;
+* приложение запускается;
+* основное поведение можно воспроизвести;
+* написаны необходимые тесты;
+* ошибки не скрываются заглушками;
+* нет незавершённой логики, замаскированной комментариями или `TODO`;
+* новый код не ломает существующие сценарии;
+* структура пакетов и названия классов соответствуют их ответственности;
+* транзакционные границы выбраны осознанно;
+* ученик может объяснить решение своими словами;
+* изменения оформлены отдельным осмысленным коммитом или pull request.
 
-### Week 2: Hibernate and PostgreSQL Foundation
+Каждая ветка должна давать законченный инкремент. Ветка не обязана завершать весь проект, но должна содержать рабочее и проверяемое изменение.
 
-Objective: make persistence explicit, stable, and interview-ready.
+---
 
-Problem:
+## 4. Управление временем и рисками
 
-- the service needs durable order storage;
-- schema changes must be controlled;
-- reads must not accidentally become slow or fragile.
+Четыре недели не предполагают обязательные занятия все 28 дней.
 
-Minimum tools:
+План рассчитан следующим образом:
 
-- JPA entity states;
-- dirty checking;
-- lazy loading and N+1;
-- cascade and orphan removal;
-- optimistic locking;
-- Flyway migrations.
+* 20 основных учебных дней;
+* 4 резервных дня;
+* 4 дня без обязательных задач.
 
-Practice:
+Резерв используется для:
 
-- replace `ddl-auto: update` with migrations;
-- add indexes for common order queries;
-- add optimistic locking to aggregate roots;
-- write repository tests;
-- reproduce and fix an N+1 query.
+* пропущенных занятий;
+* исправления сложных ошибок;
+* завершения незакрытого инкремента;
+* повторения;
+* подготовки к реальному собеседованию.
 
-### Week 3: PostgreSQL Performance and Transactions
+### Правило пропущенного дня
 
-Objective: understand how PostgreSQL executes and protects data.
+Пропущенный день не требует удваивать нагрузку на следующий день.
 
-Problem:
+Задача переносится в ближайший резервный день либо сокращается её необязательная часть.
 
-- order queries can become slow as data grows;
-- concurrent requests can produce inconsistent results;
-- indexes improve reads but add write and storage cost.
+### Правило превышения бюджета
 
-Minimum tools:
+Если задача не помещается в отведённое время:
 
-- ACID;
-- MVCC;
-- isolation levels;
-- locks and deadlocks;
-- B-tree indexes;
-- `EXPLAIN ANALYZE`.
+1. Сначала исключается production-усложнение.
+2. Затем сокращается дополнительный сценарий.
+3. Сохраняется главный учебный результат.
+4. Новая технология не добавляется, пока текущий инкремент не работает.
 
-Practice:
+Например, для outbox обязательно реализовать публикацию события и обработку ошибки Kafka. Поддержку нескольких pod, lease-механизм и `SKIP LOCKED` достаточно обсудить теоретически.
 
-- analyze order queries with `EXPLAIN ANALYZE`;
-- compare sequential scan and index scan;
-- create a transaction anomaly demo;
-- add a safe pagination query;
-- document index trade-offs.
+---
 
-### Week 4: Kafka and Event-Driven Flow
+# 5. План на четыре недели
 
-Objective: introduce asynchronous communication between services.
+## Неделя 1. Transactional Outbox и Kafka Producer
 
-Problem:
+### Цель
 
-- payment, inventory, and notifications should not block the order API;
-- messages can be duplicated, delayed, or fail;
-- consumers must process events safely.
+Завершить надёжную публикацию события `OrderCreated` из `order-service` в Kafka.
 
-Minimum tools:
+К концу недели должен работать сценарий:
 
-- Kafka topic, partition, offset, consumer group;
-- delivery guarantees;
-- retry strategies;
-- dead letter topics;
-- event schema design.
+```text
+POST /orders
+    → создание Order
+    → сохранение Order и OutboxEvent в одной транзакции
+    → чтение неопубликованных событий
+    → отправка OrderCreated в Kafka
+    → установка publishedAt после подтверждения отправки
+```
 
-Practice:
+### Теория
 
-- publish `OrderCreated`;
-- consume payment and inventory events;
-- add retry and DLQ conventions;
-- add idempotent event handling;
-- test Kafka integration with Testcontainers or local Docker.
+* проблема двойной записи;
+* границы транзакции PostgreSQL;
+* почему транзакция PostgreSQL не включает Kafka;
+* Transactional Outbox;
+* at-most-once, at-least-once и exactly-once;
+* причины повторной доставки сообщений;
+* Kafka topic;
+* partition;
+* message key;
+* offset;
+* producer acknowledgements;
+* асинхронная работа `KafkaTemplate`;
+* роль event id и aggregate id;
+* scheduled polling.
 
-### Week 5: Microservice Consistency Patterns
+### Практические задачи
 
-Objective: implement reliability patterns required for real microservices.
+#### День 1. Завершение модели outbox
 
-Problem:
+* закончить поле `publishedAt`;
+* закончить `markPublished()`;
+* закончить derived query для получения неопубликованных событий;
+* проверить тестовый профиль;
+* завершить repository integration test;
+* убедиться, что все существующие тесты используют тестовую БД.
 
-- one business operation spans multiple services;
-- distributed transactions are usually not available;
-- failures require compensation and repeat-safe processing.
+#### День 2. Подключение Kafka
 
-Minimum tools:
+* добавить необходимые зависимости;
+* настроить Kafka producer;
+* создать topic для событий заказов;
+* определить формат `OrderCreated`;
+* определить message key;
+* вручную отправить тестовое сообщение через `KafkaTemplate`.
 
-- Saga orchestration versus choreography;
-- Transactional Outbox;
-- eventual consistency;
-- compensation;
-- idempotency.
+#### День 3. Outbox publisher
 
-Practice:
+* создать компонент publisher;
+* выбрать ограниченную пачку неопубликованных событий;
+* отправлять события в Kafka;
+* помечать событие опубликованным только после успешной отправки;
+* не изменять `publishedAt` при ошибке.
 
-- add outbox table;
-- persist domain event and order in one transaction;
-- publish outbox events asynchronously;
-- implement compensation path for failed payment or inventory;
-- document the order saga.
+#### День 4. Проверка отказов
 
-### Week 6: Production Readiness and Interview Simulation
+* остановить Kafka;
+* создать заказ;
+* убедиться, что outbox-событие осталось неопубликованным;
+* поднять Kafka;
+* убедиться, что событие отправилось при повторной попытке;
+* проверить сообщение консольным consumer.
 
-Objective: prepare for system design, code review, and live discussion.
+#### День 5. Тестирование и review
 
-Problem:
+* добавить тест успешной публикации;
+* добавить тест ошибки отправки;
+* проверить транзакционную границу;
+* провести code review;
+* зафиксировать ограничения текущей реализации.
 
-- the service must be easy to run, observe, and discuss under interview pressure;
-- repeated requests and high load must be handled intentionally;
-- FinTech interviews often test concurrency reasoning.
+### Definition of Done недели
 
-Minimum tools:
+* заказ и outbox-событие сохраняются атомарно;
+* publisher выбирает только неопубликованные события;
+* Kafka получает `OrderCreated`;
+* `publishedAt` заполняется только после успешной отправки;
+* при недоступной Kafka событие остаётся доступным для повторной попытки;
+* сценарий можно воспроизвести локально;
+* есть автоматические тесты ключевого поведения.
 
-- Docker Compose local platform;
-- Redis caching and idempotency keys;
-- service observability;
-- concurrency fundamentals;
-- senior-level trade-off reasoning.
+### Вопросы для собеседования
 
-Practice:
+* Какую проблему решает Transactional Outbox?
+* Почему outbox обычно обеспечивает at-least-once?
+* В какой момент событие следует считать опубликованным?
+* Почему нельзя просто сохранить заказ, а затем вызвать Kafka producer?
+* Для чего Kafka message key?
+* Как partition влияет на порядок сообщений?
+* Что произойдёт, если приложение завершится после отправки в Kafka, но до обновления `publishedAt`?
+* Почему consumer должен быть идемпотентным?
 
-- add Docker Compose for PostgreSQL, Kafka, Redis;
-- add Redis-backed idempotency for order creation;
-- add health checks and metrics;
-- run mock interview sessions;
-- perform final architecture review.
+### Необязательные темы
 
-## Review Standards
+Только при наличии времени:
 
-Code is accepted only when:
+* `FOR UPDATE SKIP LOCKED`;
+* несколько экземпляров publisher;
+* статус `PROCESSING`;
+* lease и повторный захват зависших событий;
+* архивирование outbox.
+
+---
+
+## Неделя 2. Payment Service и Kafka Consumer
 
-- business invariants are enforced in the domain or application layer;
-- API contracts are explicit and validated;
-- persistence changes are represented by migrations;
-- transactional boundaries are intentional;
-- errors are mapped to useful HTTP responses;
-- tests cover core behavior and failure paths;
-- naming communicates business meaning;
-- infrastructure assumptions are documented.
+### Цель
+
+Создать второй микросервис, который получает `OrderCreated`, выполняет учебную обработку платежа и публикует результат.
+
+Рабочий сценарий:
+
+```text
+order-service
+    → OrderCreated
+    → Kafka
+    → payment-service
+    → PaymentSucceeded или PaymentFailed
+```
+
+### Теория
+
+* consumer group;
+* распределение partitions между consumers;
+* offset;
+* auto commit и manual acknowledgement;
+* повторная обработка;
+* consumer lag;
+* rebalance;
+* retry;
+* Dead Letter Topic;
+* poison message;
+* event contract;
+* обратная совместимость событий;
+* database per service;
+* идемпотентный consumer.
+
+### Практические задачи
+
+#### День 6. Создание payment-service
+
+* создать отдельный Spring Boot-модуль;
+* настроить отдельную PostgreSQL-базу;
+* определить структуру пакетов;
+* создать сущность платежа;
+* добавить repository и сервисный слой;
+* подготовить минимальную конфигурацию.
+
+#### День 7. Kafka consumer
+
+* подписаться на `OrderCreated`;
+* десериализовать событие;
+* создать запись платежа;
+* определить учебный алгоритм успешной и неуспешной оплаты;
+* проверить получение события.
+
+#### День 8. Идемпотентность
+
+* сохранить идентификатор обработанного события;
+* добавить уникальное ограничение;
+* не создавать повторный платёж при повторной доставке;
+* написать тест повторной обработки одного события.
+
+#### День 9. Результат оплаты
+
+* определить события `PaymentSucceeded` и `PaymentFailed`;
+* публиковать результат через Kafka;
+* выбрать key;
+* проверить оба сценария.
+
+#### День 10. Ошибки, retry и DLT
+
+* воспроизвести ошибку consumer;
+* настроить ограниченное количество повторных попыток;
+* настроить Dead Letter Topic;
+* проверить, что некорректное сообщение не блокирует поток обработки;
+* зафиксировать поведение в документации.
+
+### Definition of Done недели
+
+* `payment-service` запускается отдельно;
+* сервис использует собственную базу данных;
+* `OrderCreated` успешно обрабатывается;
+* повторная доставка одного события не создаёт повторный платёж;
+* публикуется `PaymentSucceeded` или `PaymentFailed`;
+* ошибки имеют ограниченный retry;
+* необрабатываемое сообщение попадает в DLT;
+* тесты покрывают успешный сценарий, неуспешный сценарий и повторную доставку.
+
+### Вопросы для собеседования
+
+* Что такое consumer group?
+* Может ли одна partition одновременно обрабатываться двумя consumers одной группы?
+* Что такое offset?
+* Когда следует подтверждать обработку сообщения?
+* Чем retry отличается от DLT?
+* Как возникает бесконечный цикл повторной обработки?
+* Как сделать consumer идемпотентным?
+* Почему `order-service` и `payment-service` не должны использовать одну таблицу?
+* Что произойдёт при rebalance?
+* Что такое consumer lag?
+
+### Резервный день 1
+
+Используется для завершения недели 1 или 2.
+
+Если отставания нет:
+
+* повторить команды Kafka CLI;
+* поэкспериментировать с несколькими partitions и consumers;
+* посмотреть распределение partitions между экземплярами consumer.
+
+---
+
+## Неделя 3. Saga и согласованность между сервисами
+
+### Цель
+
+Замкнуть бизнес-процесс и реализовать согласование состояния заказа с результатом оплаты.
+
+Рабочий сценарий:
+
+```text
+POST /orders
+    → OrderCreated
+    → payment-service
+    → PaymentSucceeded / PaymentFailed
+    → order-service
+    → CONFIRMED / CANCELED
+```
+
+### Теория
+
+* распределённая транзакция;
+* eventual consistency;
+* Saga;
+* choreography;
+* orchestration;
+* компенсация;
+* повторная доставка;
+* порядок событий;
+* изменение состояния агрегата;
+* optimistic locking;
+* inbox pattern;
+* хранение обработанных event id.
+
+### Практические задачи
+
+#### День 11. Consumer результатов оплаты
+
+* добавить в `order-service` consumers событий оплаты;
+* найти заказ по `aggregateId`;
+* изменить состояние заказа;
+* сохранить результат в транзакции;
+* проверить happy path.
+
+#### День 12. Неуспешная оплата
+
+* обработать `PaymentFailed`;
+* перевести заказ в `CANCELED`;
+* проверить невозможные переходы состояния;
+* добавить доменные методы вместо прямого изменения полей.
+
+#### День 13. Идемпотентность order-service
+
+* предотвратить повторную обработку события оплаты;
+* выбрать способ хранения event id;
+* добавить уникальное ограничение;
+* написать тест повторной доставки.
+
+#### День 14. Конкурентные изменения
+
+* добавить `@Version` к агрегату заказа;
+* воспроизвести конфликт обновлений;
+* разобрать `OptimisticLockException`;
+* определить, когда допустим retry.
+
+#### День 15. Документирование Saga
+
+* обновить диаграмму happy path;
+* обновить сценарий неуспешной оплаты;
+* описать eventual consistency;
+* сравнить choreography и orchestration;
+* зафиксировать ограничения учебного решения.
+
+### Definition of Done недели
+
+* `PaymentSucceeded` переводит заказ в `CONFIRMED`;
+* `PaymentFailed` переводит заказ в `CANCELED`;
+* повторное событие не изменяет заказ повторно;
+* недопустимые переходы состояния блокируются;
+* optimistic locking добавлен и понятен;
+* Saga описана диаграммами;
+* весь сценарий работает между двумя сервисами.
+
+### Вопросы для собеседования
+
+* Почему нельзя использовать обычную ACID-транзакцию между двумя сервисами?
+* Что означает eventual consistency?
+* Чем choreography отличается от orchestration?
+* Что является компенсацией в текущем процессе?
+* Нужна ли компенсация после `PaymentFailed`?
+* Где должна находиться логика изменения статуса заказа?
+* Как optimistic locking защищает агрегат?
+* Почему идемпотентность нужна и producer, и consumer?
+* Что делать с событием для несуществующего заказа?
+* Как обрабатывать события, пришедшие не по порядку?
+
+### Резервный день 2
+
+Если есть отставание — завершить Saga.
+
+Если отставания нет:
+
+* добавить `inventory-service` как упрощённый consumer;
+* либо смоделировать резервирование товара внутри документации без отдельного полноценного сервиса.
+
+Полноценный `inventory-service` не является обязательным результатом четырёхнедельного плана.
+
+---
+
+## Неделя 4. Hibernate, PostgreSQL, Redis, Docker и интервью
+
+### Цель
+
+Укрепить проект, закрыть ключевые пробелы для собеседований и сделать локальный запуск воспроизводимым.
+
+### Часть 1. Hibernate и PostgreSQL
+
+#### День 16. N+1
+
+* создать сценарий получения списка заказов с позициями;
+* воспроизвести N+1;
+* увидеть дополнительные SQL-запросы;
+* исправить проблему через `join fetch`, `EntityGraph` или отдельную DTO-проекцию;
+* сравнить варианты.
+
+#### День 17. Индексы и EXPLAIN ANALYZE
+
+* выбрать реальный запрос проекта;
+* выполнить `EXPLAIN ANALYZE`;
+* найти sequential scan;
+* добавить индекс;
+* сравнить план до и после;
+* обсудить стоимость индекса для вставок и обновлений.
+
+#### День 18. Flyway и схема
+
+* подключить Flyway;
+* перенести создание таблиц в миграции;
+* заменить `ddl-auto: update`;
+* использовать `validate` для обычного запуска;
+* оставить отдельную контролируемую стратегию тестирования;
+* проверить запуск на чистой БД.
+
+Если переход на Flyway начинает угрожать завершению всего проекта, допускается сократить задачу до миграций основных таблиц `order-service`.
+
+### Часть 2. Redis
+
+#### День 19. Один законченный Redis-сценарий
+
+Приоритетный вариант:
+
+```text
+Idempotency-Key для POST /orders
+```
+
+Необходимо:
+
+* принять idempotency key;
+* сохранить связь ключа с результатом операции;
+* при повторном запросе вернуть прежний результат;
+* определить TTL;
+* обсудить race condition при двух одновременных запросах;
+* добавить тест или воспроизводимый сценарий.
+
+Альтернативный вариант при нехватке времени:
+
+* использовать Redis для дедупликации Kafka event id.
+
+Не следует одновременно реализовывать cache-aside, distributed lock, rate limiting и idempotency key.
+
+### Часть 3. Docker Compose
+
+#### День 20. Воспроизводимый запуск
+
+Создать или завершить Docker Compose для:
+
+* Kafka;
+* PostgreSQL `order-service`;
+* PostgreSQL `payment-service`;
+* Redis;
+* `order-service`;
+* `payment-service`.
+
+Добавить:
+
+* отдельные Dockerfile;
+* environment variables;
+* volumes;
+* networks;
+* health checks;
+* зависимости запуска;
+* инструкцию в README.
+
+### Definition of Done технической части недели
+
+* воспроизведён и исправлен N+1;
+* выполнен хотя бы один осмысленный `EXPLAIN ANALYZE`;
+* добавлен полезный индекс;
+* схема БД управляется Flyway полностью или для основных таблиц;
+* реализован один законченный сценарий Redis;
+* проект запускается через Docker Compose;
+* новый разработчик может запустить проект по README.
+
+---
+
+## 6. Финальная подготовка к собеседованиям
+
+Финальная подготовка выполняется в течение четвёртой недели и резервных дней.
+
+### Java Core
+
+Повторить:
+
+* устройство `HashMap`;
+* контракт `equals()` и `hashCode()`;
+* immutable-объекты;
+* String pool;
+* Integer cache;
+* generics;
+* checked и unchecked exceptions;
+* Stream API;
+* `Optional`;
+* records;
+* sealed classes.
+
+### JVM и память
+
+Повторить:
+
+* stack и heap;
+* metaspace;
+* GC roots;
+* достижимость объектов;
+* поколения памяти;
+* основные сборщики мусора;
+* причины memory leak;
+* heap dump;
+* stop-the-world.
+
+### JMM и concurrency
+
+Повторить и закрепить:
+
+* happens-before;
+* visibility;
+* atomicity;
+* ordering;
+* `volatile`;
+* `synchronized`;
+* CAS;
+* `AtomicInteger`;
+* race condition;
+* deadlock;
+* thread pool;
+* `CompletableFuture`;
+* virtual threads;
+* различия platform threads и virtual threads.
+
+### Spring
+
+Повторить:
+
+* lifecycle bean;
+* DI;
+* proxy;
+* `@Transactional`;
+* self-invocation;
+* propagation;
+* isolation;
+* `@Async`;
+* Spring MVC request lifecycle;
+* обработка исключений;
+* validation.
+
+### Hibernate
+
+Повторить:
+
+* entity states;
+* Persistence Context;
+* first-level cache;
+* dirty checking;
+* flush;
+* lazy loading;
+* N+1;
+* cascade;
+* orphan removal;
+* optimistic locking;
+* JPQL;
+* fetch join;
+* EntityGraph.
+
+### Kafka
+
+Повторить:
+
+* broker;
+* topic;
+* partition;
+* replication;
+* producer;
+* consumer;
+* consumer group;
+* offset;
+* rebalance;
+* key;
+* ordering;
+* retries;
+* DLT;
+* idempotency;
+* at-most-once;
+* at-least-once;
+* exactly-once semantics;
+* Transactional Outbox.
+
+### Архитектура
+
+Подготовить объяснение:
+
+* почему проект разделён на сервисы;
+* почему у сервисов отдельные базы;
+* почему взаимодействие асинхронное;
+* почему выбран Kafka;
+* какую проблему решает outbox;
+* как обеспечивается идемпотентность;
+* как устроена Saga;
+* какие компромиссы есть у choreography;
+* когда понадобился бы orchestrator;
+* какие части учебной реализации потребовали бы усиления в production.
+
+---
+
+## 7. Резервные дни
+
+### Резервный день 3
+
+Используется для:
+
+* Docker Compose;
+* Flyway;
+* Redis;
+* устранения проблем интеграции сервисов.
+
+Если отставания нет:
+
+* добавить метрики Micrometer;
+* вывести health checks;
+* проверить Kafka consumer lag;
+* обновить архитектурную диаграмму.
+
+### Резервный день 4
+
+Финальный день:
+
+* полный запуск системы с чистого окружения;
+* прохождение happy path;
+* прохождение failure path;
+* запуск всех тестов;
+* финальное code review;
+* проверка README;
+* проверка диаграмм;
+* mock interview по проекту;
+* составление списка оставшихся пробелов.
+
+---
+
+# 8. Приоритеты
+
+## Обязательный результат
+
+К завершению программы должны быть реализованы:
+
+1. Рабочий `order-service`.
+2. Transactional Outbox.
+3. Публикация `OrderCreated` в Kafka.
+4. Рабочий `payment-service`.
+5. Consumer `OrderCreated`.
+6. `PaymentSucceeded` и `PaymentFailed`.
+7. Обработка результата оплаты в `order-service`.
+8. Идемпотентность consumers.
+9. Законченная Saga между двумя сервисами.
+10. Docker Compose.
+11. Автоматические тесты основного и ошибочного сценариев.
+12. Документация архитектуры.
+13. Финальное mock interview.
+
+## Желательный результат
+
+* retry и DLT;
+* Redis idempotency key;
+* N+1 и его исправление;
+* индекс и `EXPLAIN ANALYZE`;
+* Flyway;
+* optimistic locking;
+* health checks и метрики.
+
+## Только при наличии времени
+
+* полноценный `inventory-service`;
+* `notification-service`;
+* Kubernetes Deployment и Service;
+* Testcontainers для всей Kafka-цепочки;
+* блокировки outbox для нескольких replicas;
+* tracing;
+* schema registry;
+* полноценная observability-платформа.
+
+---
+
+# 9. Стандарты code review
+
+Код принимается, только если:
+
+* бизнес-инварианты находятся в domain или application layer;
+* controller не содержит бизнес-логики;
+* API-контракты явные;
+* входные данные валидируются;
+* транзакционные границы обоснованы;
+* entity не изменяются произвольным выставлением полей;
+* ошибки не скрываются;
+* Kafka events имеют явный контракт;
+* повторная обработка учтена;
+* тесты проверяют результат, а не детали реализации;
+* тесты не зависят от случайных данных локальной БД;
+* production и test configuration разделены;
+* пакет теста зеркалит пакет проверяемого класса;
+* naming отражает бизнес-смысл;
+* инфраструктурные ограничения документированы.
+
+---
+
+# 10. Критерии завершения всей программы
+
+Программа считается успешно завершённой, когда ученик способен без подсказки:
+
+1. Объяснить полный путь создания заказа.
+2. Объяснить Transactional Outbox.
+3. Объяснить причины возможных дубликатов.
+4. Объяснить работу Kafka producer и consumer.
+5. Объяснить partition, key, offset и consumer group.
+6. Реализовать идемпотентную обработку события.
+7. Объяснить Saga и eventual consistency.
+8. Показать успешный и ошибочный бизнес-сценарий.
+9. Найти N+1 и предложить исправление.
+10. Прочитать базовый `EXPLAIN ANALYZE`.
+11. Объяснить назначение Redis в проекте.
+12. Запустить систему через Docker Compose.
+13. Объяснить JMM, `volatile`, CAS и `AtomicInteger`.
+14. Провести архитектурное ревью собственного проекта.
+15. Ответить на уточняющие вопросы о компромиссах и production-ограничениях.
+
+Главный критерий — не количество написанного кода, а способность самостоятельно объяснить:
+
+* какую проблему решает каждый компонент;
+* почему было выбрано именно это решение;
+* какие у решения недостатки;
+* как оно будет вести себя при ошибках;
+* что потребуется изменить при росте нагрузки.
