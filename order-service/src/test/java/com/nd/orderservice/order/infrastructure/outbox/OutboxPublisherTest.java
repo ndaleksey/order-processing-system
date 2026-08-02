@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.SendResult;
 
@@ -18,6 +17,7 @@ import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,9 +42,9 @@ class OutboxPublisherTest {
         var event = OutboxEvent.orderCreated(orderId, payload);
 
         @SuppressWarnings("unchecked")
-        SendResult<String, String> sendResult = Mockito.mock(SendResult.class);
+        SendResult<String, String> sendResult = mock(SendResult.class);
 
-        var metadata = Mockito.mock(RecordMetadata.class);
+        var metadata = mock(RecordMetadata.class);
 
         when(sendResult.getRecordMetadata()).thenReturn(metadata);
         when(metadata.topic()).thenReturn("order.events");
@@ -58,6 +58,8 @@ class OutboxPublisherTest {
 
         when(orderEventProducer.send(orderId, payload))
                 .thenReturn(completableFuture);
+
+        assertNull(event.getPublishedAt());
 
         outboxPublisher.publishPendingEvents();
 
