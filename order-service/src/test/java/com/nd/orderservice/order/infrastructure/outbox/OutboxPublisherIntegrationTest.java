@@ -16,7 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -141,6 +140,7 @@ class OutboxPublisherIntegrationTest {
         var pendingEvents = outboxEventRepository
                 .findTop10ByPublishedAtIsNullOrderByCreatedAtAsc();
 
-        assertFalse(pendingEvents.isEmpty());
+        assertEquals(1, pendingEvents.size());
+        assertEquals(savedEvent.getId(), pendingEvents.getFirst().getId());
     }
 }
