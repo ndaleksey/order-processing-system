@@ -11,6 +11,11 @@ target/
 .project
 .settings/
 
+*.log
+
 build/
 .kotlin
 !.mvn/wrapper/maven-wrapper.jar
+
+**/.idea/
+**/target/
