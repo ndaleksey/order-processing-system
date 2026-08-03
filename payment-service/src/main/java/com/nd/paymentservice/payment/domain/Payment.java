@@ -61,7 +61,7 @@ public class Payment {
     }
 
     public static Payment create(UUID orderId, BigDecimal amount) {
-        if (amount.signum() < 0) {
+        if (amount.signum() <= 0) {
             throw new IllegalArgumentException("Payment amount must be positive");
         }
 
