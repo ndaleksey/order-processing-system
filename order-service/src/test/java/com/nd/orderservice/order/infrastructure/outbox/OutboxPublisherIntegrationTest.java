@@ -11,6 +11,8 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -49,18 +51,28 @@ class OutboxPublisherIntegrationTest {
     void shouldPersistPublishedAtAfterSuccessfulKafkaSend() {
         outboxEventRepository.deleteAll();
 
+        var eventId = UUID.fromString(
+                "13ba5c7f-636a-452d-ae42-56449b7403f2"
+        );
+
         var orderId = UUID.fromString(
                 "97630c6f-a2a1-4adc-ab0c-02f5d45b3699"
         );
 
+        var occurredAt = LocalDateTime.of(2026, 8, 5, 0, 0, 0)
+                .toInstant(ZoneOffset.UTC);
+
         var payload = """
                 {
+                  "eventId": "13ba5c7f-636a-452d-ae42-56449b7403f2",
                   "orderId": "97630c6f-a2a1-4adc-ab0c-02f5d45b3699",
-                  "customerId": "c4bc48d5-9fdf-48a8-af0c-fb63035f7093"
+                  "customerId": "c4bc48d5-9fdf-48a8-af0c-fb63035f7093",
+                  "totalAmount": 100,
+                  "occurredAt": "2026-08-05 00:00:00"
                 }
                 """;
 
-        var event = OutboxEvent.orderCreated(orderId, payload);
+        var event = OutboxEvent.orderCreated(eventId, orderId, occurredAt, payload);
         var savedEvent = outboxEventRepository.saveAndFlush(event);
 
         @SuppressWarnings("unchecked")
@@ -105,18 +117,28 @@ class OutboxPublisherIntegrationTest {
     void shouldKeepEventUnpublishedWhenKafkaSendFails() {
         outboxEventRepository.deleteAll();
 
+        var eventId = UUID.fromString(
+                "13ba5c7f-636a-452d-ae42-56449b7403f2"
+        );
+
         var orderId = UUID.fromString(
                 "97630c6f-a2a1-4adc-ab0c-02f5d45b3699"
         );
 
+        var occurredAt = LocalDateTime.of(2026, 8, 5, 0, 0, 0)
+                .toInstant(ZoneOffset.UTC);
+
         var payload = """
                 {
+                  "eventId": "13ba5c7f-636a-452d-ae42-56449b7403f2",
                   "orderId": "97630c6f-a2a1-4adc-ab0c-02f5d45b3699",
-                  "customerId": "c4bc48d5-9fdf-48a8-af0c-fb63035f7093"
+                  "customerId": "c4bc48d5-9fdf-48a8-af0c-fb63035f7093",
+                  "totalAmount": 100,
+                  "occurredAt": "2026-08-05 00:00:00"
                 }
                 """;
 
-        var event = OutboxEvent.orderCreated(orderId, payload);
+        var event = OutboxEvent.orderCreated(eventId, orderId, occurredAt, payload);
         var savedEvent = outboxEventRepository.saveAndFlush(event);
 
         when(orderEventProducer.send(eq(orderId), anyString()))

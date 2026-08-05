@@ -20,7 +20,6 @@ import java.util.UUID;
 public class OutboxEvent {
 
     @Id
-    @UuidGenerator
     private UUID id;
 
     private String type;
@@ -35,12 +34,18 @@ public class OutboxEvent {
     @Column(name = "payload", columnDefinition = "jsonb", nullable = false)
     private String payload;
 
-    public static OutboxEvent orderCreated(UUID orderId, String payload) {
+    public static OutboxEvent orderCreated(
+            UUID eventId,
+            UUID orderId,
+            Instant createdAt,
+            String payload) {
         var event = new OutboxEvent();
+        event.id = eventId;
         event.type = "ORDER_CREATED";
         event.aggregateId = orderId;
-        event.createdAt = Instant.now();
+        event.createdAt = createdAt;
         event.payload = payload;
+
         return event;
     }
 

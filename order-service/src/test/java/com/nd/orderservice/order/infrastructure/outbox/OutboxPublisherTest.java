@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.SendResult;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +39,10 @@ class OutboxPublisherTest {
     @Test
     void shouldMarkEventAsPublishedWhenKafkaSendSucceeds() {
         var orderId = UUID.randomUUID();
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now();
         var payload = "{}";
-        var event = OutboxEvent.orderCreated(orderId, payload);
+        var event = OutboxEvent.orderCreated(eventId, orderId, occurredAt, payload);
 
         @SuppressWarnings("unchecked")
         SendResult<String, String> sendResult = mock(SendResult.class);
@@ -71,8 +74,10 @@ class OutboxPublisherTest {
     @Test
     void shouldNotMarkEventAsPublishedWhenKafkaSendFails() {
         var orderId = UUID.randomUUID();
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now();
         var payload = "{}";
-        var event = OutboxEvent.orderCreated(orderId, payload);
+        var event = OutboxEvent.orderCreated(eventId, orderId, occurredAt, payload);
 
         var completableFuture = CompletableFuture.<SendResult<String, String>>failedFuture(
                 new RuntimeException("Kafka unavailable"));

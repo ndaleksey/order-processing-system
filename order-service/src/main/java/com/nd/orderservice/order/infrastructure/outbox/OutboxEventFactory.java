@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
+import java.util.UUID;
+
 /**
  * @since 2026
  */
@@ -16,9 +19,23 @@ public class OutboxEventFactory {
     private final ObjectMapper objectMapper;
 
     public OutboxEvent createOrderCreated(Order order) {
-        var event = new OrderCreatedEvent(order.getId(), order.getCustomerId());
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now();
 
-        return OutboxEvent.orderCreated(order.getId(), objectMapper.writeValueAsString(event)
+        var event = new OrderCreatedEvent(
+                eventId,
+                order.getId(),
+                order.getCustomerId(),
+                order.getTotalPrice(),
+                occurredAt);
+
+        var payload = objectMapper.writeValueAsString(event);
+
+        return OutboxEvent.orderCreated(
+                eventId,
+                order.getId(),
+                occurredAt,
+                payload
         );
 
     }
