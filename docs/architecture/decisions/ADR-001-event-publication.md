@@ -132,7 +132,7 @@ publishedAt != null
 Используется topic:
 
 ```text
-order.events
+orders
 ```
 
 Message key:

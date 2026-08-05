@@ -69,7 +69,7 @@ order-service/src/main/java/com/nd/orderservice/order/infrastructure/kafka/Kafka
 app:
   kafka:
     topics:
-      order-events: order.events
+      orders: orders
 ```
 
 ---
@@ -93,7 +93,7 @@ order-service/src/main/java/com/nd/orderservice/order/infrastructure/kafka/Order
 Формат сообщения:
 
 ```text
-topic = order.events
+topic = orders
 key   = aggregateId.toString()
 value = OutboxEvent.payload
 ```
@@ -368,7 +368,7 @@ failed CompletableFuture
 3. Создан заказ.
 4. В PostgreSQL появилась запись `OutboxEvent` с `publishedAt == null`.
 5. Scheduler запустил publisher.
-6. Producer отправил сообщение в topic `order.events`.
+6. Producer отправил сообщение в topic `orders`.
 7. После подтверждения Kafka значение `publishedAt` было сохранено.
 8. Все Maven-тесты проекта завершились успешно.
 

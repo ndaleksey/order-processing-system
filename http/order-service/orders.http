@@ -1,0 +1,14 @@
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+  "customerId": "840c7f92-3ab8-4465-86d1-b2d1712e358f",
+  "items": [
+    {
+      "productId": "741ec277-42aa-4ca1-ae02-b50f4baf5484",
+      "productName": "iPhone",
+      "productPrice": 1000,
+      "quantity": 1
+    }
+  ]
+}

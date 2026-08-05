@@ -50,7 +50,7 @@ class OutboxPublisherTest {
         var metadata = mock(RecordMetadata.class);
 
         when(sendResult.getRecordMetadata()).thenReturn(metadata);
-        when(metadata.topic()).thenReturn("order.events");
+        when(metadata.topic()).thenReturn("orders");
         when(metadata.partition()).thenReturn(0);
         when(metadata.offset()).thenReturn(10L);
 

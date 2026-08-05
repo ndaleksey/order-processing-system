@@ -17,7 +17,7 @@ public record CreateOrderRequest(
 ) {
     public record Item(
             @NotNull UUID productId,
-            @NotBlank String name,
+            @NotBlank String productName,
             @NotNull @DecimalMin(value = "0.01") BigDecimal productPrice,
             @Min(1) int quantity
     ) {

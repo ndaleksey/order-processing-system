@@ -18,6 +18,6 @@ public class OrderEventProducer {
     private final KafkaTopicsProperties topicsProperties;
 
     public CompletableFuture<SendResult<String, String>> send(UUID aggregateId, String payload) {
-        return kafkaTemplate.send(topicsProperties.orderEvents(), aggregateId.toString(), payload);
+        return kafkaTemplate.send(topicsProperties.orders(), aggregateId.toString(), payload);
     }
 }

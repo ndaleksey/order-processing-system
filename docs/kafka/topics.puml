@@ -1,7 +1,7 @@
 @startuml
 
 package "Kafka Topics" {
-	queue "order-events" {
+	queue "orders" {
 		[OrderCreated]
 		[OrderConfirmed]
 		[OrderCancelled]

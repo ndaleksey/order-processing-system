@@ -24,8 +24,10 @@ public class OutboxEvent {
 
     private String type;
 
+    @Column(name = "aggregated_id", nullable = false)
     private UUID aggregateId;
 
+    @Column(name="created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     private Instant publishedAt;
