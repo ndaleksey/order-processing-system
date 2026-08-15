@@ -8,7 +8,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -23,7 +22,6 @@ import java.util.UUID;
 @Table(name = "outbox")
 public class OutboxEvent {
     @Id
-    @UuidGenerator
     private UUID id;
 
     private String type;
@@ -34,7 +32,7 @@ public class OutboxEvent {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "published_at", nullable = false, updatable = false)
+    @Column(name = "published_at")
     private Instant publishedAt;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -43,19 +41,19 @@ public class OutboxEvent {
 
     public static OutboxEvent createSucceeded(
             UUID eventId,
-            UUID orderId,
+            UUID paymentId,
             Instant createdAt,
             String payload
     ) {
-        return create(eventId, orderId, createdAt, "PAYMENT_SUCCEEDED", payload);
+        return create(eventId, paymentId, createdAt, "PAYMENT_SUCCEEDED", payload);
     }
 
     public static OutboxEvent createFailed(
             UUID eventId,
-            UUID orderId,
+            UUID paymentId,
             Instant createdAt,
             String payload) {
-        return create(eventId, orderId, createdAt, "PAYMENT_FAILED", payload);
+        return create(eventId, paymentId, createdAt, "PAYMENT_FAILED", payload);
     }
 
     public void markPublished() {
@@ -63,16 +61,16 @@ public class OutboxEvent {
     }
 
     private static OutboxEvent create(UUID eventId,
-                                      UUID orderId,
+                                      UUID paymentId,
                                       Instant createdAt,
                                       String type,
                                       String payload) {
         var event = new OutboxEvent();
         event.id = eventId;
-        event.aggregatedId = orderId;
+        event.aggregatedId = paymentId;
         event.createdAt = createdAt;
         event.payload = payload;
-        event.type = "PAYMENT_SUCCEEDED";
+        event.type = type;
 
         return event;
     }

@@ -41,13 +41,18 @@ public class PaymentService {
 
         if (result.successful()) {
             payment.succeed();
-            outboxEvent = outboxEventFactory.createPaymentSucceeded(payment);
+
+            var savedPayment = paymentRepository.save(payment);
+
+            outboxEvent = outboxEventFactory.createPaymentSucceeded(savedPayment);
         } else {
             payment.fail();
-            outboxEvent = outboxEventFactory.createPaymentFailed(payment);
+
+            var savedPayment = paymentRepository.save(payment);
+
+            outboxEvent = outboxEventFactory.createPaymentFailed(savedPayment, result.failureReason());
         }
 
-        paymentRepository.save(payment);
         processedEventRepository.save(ProcessedEvent.create(event.eventId()));
         outboxEventRepository.save(outboxEvent);
     }

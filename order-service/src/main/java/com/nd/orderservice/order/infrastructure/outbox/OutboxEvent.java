@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -30,7 +29,7 @@ public class OutboxEvent {
     @Column(name="created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "published_at", nullable = false, updatable = false)
+    @Column(name = "published_at")
     private Instant publishedAt;
 
     @JdbcTypeCode(SqlTypes.JSON)
