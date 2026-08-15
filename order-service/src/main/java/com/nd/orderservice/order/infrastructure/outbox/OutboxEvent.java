@@ -30,6 +30,7 @@ public class OutboxEvent {
     @Column(name="created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "published_at", nullable = false, updatable = false)
     private Instant publishedAt;
 
     @JdbcTypeCode(SqlTypes.JSON)

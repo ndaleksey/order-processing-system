@@ -4,6 +4,9 @@ import com.nd.paymentservice.payment.domain.Payment;
 import com.nd.paymentservice.payment.messaging.event.OrderCreatedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEventRepository;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEvent;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventFactory;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventRepository;
 import com.nd.paymentservice.payment.persistence.PaymentRepository;
 import com.nd.paymentservice.payment.provider.PaymentProvider;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,8 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ProcessedEventRepository processedEventRepository;
     private final PaymentProvider paymentProvider;
+    private final OutboxEventRepository outboxEventRepository;
+    private final OutboxEventFactory outboxEventFactory;
 
     @Transactional
     public void handleOrderCreated(OrderCreatedEvent event) {
@@ -32,14 +37,18 @@ public class PaymentService {
 
         var payment = Payment.create(event.orderId(), event.totalAmount());
         var result = paymentProvider.charge(event.orderId(), event.totalAmount());
+        OutboxEvent outboxEvent;
 
         if (result.successful()) {
             payment.succeed();
+            outboxEvent = outboxEventFactory.createPaymentSucceeded(payment);
         } else {
             payment.fail();
+            outboxEvent = outboxEventFactory.createPaymentFailed(payment);
         }
 
         paymentRepository.save(payment);
         processedEventRepository.save(ProcessedEvent.create(event.eventId()));
+        outboxEventRepository.save(outboxEvent);
     }
 }

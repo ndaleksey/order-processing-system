@@ -8,7 +8,7 @@ public record PaymentResult(
         String failureReason
 ) {
     public static PaymentResult success() {
-        return new PaymentResult(true, "Success");
+        return new PaymentResult(true, null);
     }
 
     public static PaymentResult failed(String reason) {
