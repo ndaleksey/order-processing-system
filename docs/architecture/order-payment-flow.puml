@@ -1,0 +1,82 @@
+@startuml
+title Order Payment Flow
+
+actor Client
+
+participant "order-service" as OrderService
+database "order DB" as OrderDb
+participant "order outbox publisher" as OrderOutbox
+queue "Kafka" as Kafka
+participant "payment-service" as PaymentService
+database "payment DB" as PaymentDb
+participant "payment provider" as PaymentProvider
+
+Client -> OrderService: POST /orders
+
+OrderService -> OrderDb: save Order\n+ OutboxEvent(OrderCreated)
+OrderDb --> OrderService: commit
+
+OrderService --> Client: orderId + CREATED
+
+OrderOutbox -> OrderDb: load unpublished events
+OrderDb --> OrderOutbox: OrderCreated
+OrderOutbox -> Kafka: publish OrderCreated
+
+Kafka -> PaymentService: OrderCreated
+
+PaymentService -> PaymentDb: check ProcessedEvent(eventId)
+
+alt event already processed
+    PaymentDb --> PaymentService: exists
+    PaymentService --> Kafka: processing completed
+else new event
+    PaymentService -> PaymentDb: save Payment(CREATED)\n+ ProcessedEvent(eventId)
+    PaymentDb --> PaymentService: commit
+end
+
+PaymentService -> PaymentProvider: charge(orderId, amount)
+
+alt payment succeeded
+    PaymentProvider --> PaymentService: SUCCESS
+
+    PaymentService -> PaymentDb: Payment -> SUCCEEDED\n+ OutboxEvent(PaymentSucceeded)
+    PaymentDb --> PaymentService: commit
+
+    PaymentService -> Kafka: publish PaymentSucceeded
+    Kafka -> OrderService: PaymentSucceeded
+
+    OrderService -> OrderDb: Order -> CONFIRMED
+    OrderDb --> OrderService: commit
+
+else payment failed
+    PaymentProvider --> PaymentService: FAILED(reason)
+
+    PaymentService -> PaymentDb: Payment -> FAILED\n+ OutboxEvent(PaymentFailed)
+    PaymentDb --> PaymentService: commit
+
+    PaymentService -> Kafka: publish PaymentFailed
+    Kafka -> OrderService: PaymentFailed
+
+    OrderService -> OrderDb: Order -> CANCELED
+    OrderDb --> OrderService: commit
+end
+
+note right of Kafka
+Key learning points:
+
+1. DB + Kafka is a dual-write problem
+   -> Transactional Outbox
+
+2. Kafka may redeliver messages
+   -> Idempotent Consumer
+
+3. Services become consistent over time
+   -> Eventual Consistency
+
+4. Later:
+   Payment succeeded,
+   Inventory failed
+   -> Saga / Compensation
+end note
+
+@enduml

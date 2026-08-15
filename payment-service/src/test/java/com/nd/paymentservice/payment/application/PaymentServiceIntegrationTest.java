@@ -1,6 +1,5 @@
-package com.nd.paymentservice.payment.payment;
+package com.nd.paymentservice.payment.application;
 
-import com.nd.paymentservice.payment.application.PaymentService;
 import com.nd.paymentservice.payment.messaging.event.OrderCreatedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEventRepository;
 import com.nd.paymentservice.payment.persistence.PaymentRepository;

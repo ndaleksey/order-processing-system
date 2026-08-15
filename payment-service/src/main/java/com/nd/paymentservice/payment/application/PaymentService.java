@@ -5,6 +5,7 @@ import com.nd.paymentservice.payment.messaging.event.OrderCreatedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEventRepository;
 import com.nd.paymentservice.payment.persistence.PaymentRepository;
+import com.nd.paymentservice.payment.provider.PaymentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final ProcessedEventRepository processedEventRepository;
+    private final PaymentProvider paymentProvider;
 
     @Transactional
     public void handleOrderCreated(OrderCreatedEvent event) {
@@ -29,6 +31,13 @@ public class PaymentService {
         }
 
         var payment = Payment.create(event.orderId(), event.totalAmount());
+        var result = paymentProvider.charge(event.orderId(), event.totalAmount());
+
+        if (result.successful()) {
+            payment.succeed();
+        } else {
+            payment.fail();
+        }
 
         paymentRepository.save(payment);
         processedEventRepository.save(ProcessedEvent.create(event.eventId()));
