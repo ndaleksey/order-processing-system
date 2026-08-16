@@ -19,31 +19,37 @@ public class OutboxEventFactory {
     private final ObjectMapper objectMapper;
 
     public OutboxEvent createPaymentSucceeded(Payment payment) {
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now();
+
         var event = new PaymentSucceededEvent(
-                UUID.randomUUID(),
+                eventId,
                 payment.getOrderId(),
                 payment.getId(),
-                Instant.now());
+                occurredAt);
 
         return OutboxEvent.createSucceeded(
-                UUID.randomUUID(),
+                event.eventId(),
                 payment.getId(),
                 Instant.now(),
                 objectMapper.writeValueAsString(event));
     }
 
     public OutboxEvent createPaymentFailed(Payment payment, String reason) {
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now();
+
         var event = new PaymentFailedEvent(
-                UUID.randomUUID(),
+                eventId,
                 payment.getOrderId(),
                 payment.getId(),
                 reason,
-                Instant.now());
+                occurredAt);
 
         return OutboxEvent.createFailed(
-                UUID.randomUUID(),
+                event.eventId(),
                 payment.getId(),
-                Instant.now(),
+                occurredAt,
                 objectMapper.writeValueAsString(event));
     }
 }

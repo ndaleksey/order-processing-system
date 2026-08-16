@@ -5,6 +5,9 @@ import com.nd.paymentservice.payment.domain.PaymentStatus;
 import com.nd.paymentservice.payment.messaging.event.OrderCreatedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEventRepository;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEvent;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventFactory;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventRepository;
 import com.nd.paymentservice.payment.persistence.PaymentRepository;
 import com.nd.paymentservice.payment.provider.PaymentProvider;
 import com.nd.paymentservice.payment.provider.PaymentResult;
@@ -22,6 +25,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +46,12 @@ public class PaymentServiceTest {
     @Mock
     private ProcessedEventRepository processedEventRepository;
 
+    @Mock
+    private OutboxEventRepository outboxEventRepository;
+
+    @Mock
+    private OutboxEventFactory outboxEventFactory;
+
     @Captor
     private ArgumentCaptor<Payment> paymentCaptor;
 
@@ -54,19 +67,39 @@ public class PaymentServiceTest {
                 BigDecimal.ONE,
                 Instant.now());
 
+        // GIVEN
         when(processedEventRepository.existsById(event.eventId()))
                 .thenReturn(false);
 
         when(paymentProvider.charge(event.orderId(), event.totalAmount()))
                 .thenReturn(PaymentResult.success());
 
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        var outboxEvent = mock(OutboxEvent.class);
+
+        when(outboxEventFactory.createPaymentSucceeded(any(Payment.class)))
+                .thenReturn(outboxEvent);
+
+        // WHEN
         paymentService.handleOrderCreated(event);
 
+        // THEN
         verify(paymentRepository).save(paymentCaptor.capture());
+
+        var savedPayment = paymentCaptor.getValue();
+
         verify(processedEventRepository)
                 .save(any(ProcessedEvent.class));
 
-        var savedPayment = paymentCaptor.getValue();
+        verify(outboxEventFactory)
+                .createPaymentSucceeded(savedPayment);
+
+        verify(outboxEventFactory, never())
+                .createPaymentFailed(any(), anyString());
+
+        verify(outboxEventRepository).save(outboxEvent);
 
         assertEquals(PaymentStatus.SUCCEEDED, savedPayment.getStatus());
         assertEquals(event.orderId(), savedPayment.getOrderId());
@@ -82,19 +115,41 @@ public class PaymentServiceTest {
                 BigDecimal.ONE,
                 Instant.now());
 
+        var failedReason = "Insufficient funds";
+
+        // GIVEN
         when(processedEventRepository.existsById(event.eventId()))
                 .thenReturn(false);
 
         when(paymentProvider.charge(event.orderId(), event.totalAmount()))
-                .thenReturn(PaymentResult.failed("Funds not enough"));
+                .thenReturn(PaymentResult.failed(failedReason));
 
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        var outboxEvent = mock(OutboxEvent.class);
+
+        when(outboxEventFactory.createPaymentFailed(any(Payment.class), eq(failedReason)))
+                .thenReturn(outboxEvent);
+
+        // WHEN
         paymentService.handleOrderCreated(event);
 
+        // THEN
         verify(paymentRepository).save(paymentCaptor.capture());
+
+        var savedPayment = paymentCaptor.getValue();
+
         verify(processedEventRepository)
                 .save(any(ProcessedEvent.class));
 
-        var savedPayment = paymentCaptor.getValue();
+        verify(outboxEventFactory)
+                .createPaymentFailed(savedPayment, failedReason);
+
+        verify(outboxEventFactory, never())
+                .createPaymentSucceeded(any());
+
+        verify(outboxEventRepository).save(outboxEvent);
 
         assertEquals(PaymentStatus.FAILED, savedPayment.getStatus());
         assertEquals(event.orderId(), savedPayment.getOrderId());
