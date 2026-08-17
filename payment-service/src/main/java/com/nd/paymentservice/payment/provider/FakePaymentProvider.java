@@ -10,10 +10,12 @@ import java.util.UUID;
  */
 @Component
 public class FakePaymentProvider implements PaymentProvider {
+    public static String INSUFFICIENT_FUNDS = "Insufficient funds";
+
     @Override
     public PaymentResult charge(UUID orderId, BigDecimal amount) {
         if (amount.compareTo(BigDecimal.valueOf(10_000)) >= 0) {
-            return PaymentResult.failed("Insufficient funds");
+            return PaymentResult.failed(INSUFFICIENT_FUNDS);
         }
 
         return PaymentResult.success();

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /**
@@ -20,7 +21,7 @@ public class OutboxEventFactory {
 
     public OutboxEvent createPaymentSucceeded(Payment payment) {
         var eventId = UUID.randomUUID();
-        var occurredAt = Instant.now();
+        var occurredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
         var event = new PaymentSucceededEvent(
                 eventId,
@@ -31,13 +32,13 @@ public class OutboxEventFactory {
         return OutboxEvent.createSucceeded(
                 event.eventId(),
                 payment.getId(),
-                Instant.now(),
+                occurredAt,
                 objectMapper.writeValueAsString(event));
     }
 
     public OutboxEvent createPaymentFailed(Payment payment, String reason) {
         var eventId = UUID.randomUUID();
-        var occurredAt = Instant.now();
+        var occurredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
         var event = new PaymentFailedEvent(
                 eventId,
