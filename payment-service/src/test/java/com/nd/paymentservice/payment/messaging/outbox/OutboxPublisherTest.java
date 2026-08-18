@@ -97,7 +97,7 @@ class OutboxPublisherTest {
         // WHEN
         assertThrowsExactly(
                 CompletionException.class,
-                () -> outboxPublisher.publishPendingEvents(), "Kafka unavailable");
+                () -> outboxPublisher.publishPendingEvents());
 
         // THEN
         verify(event, never()).markPublished();

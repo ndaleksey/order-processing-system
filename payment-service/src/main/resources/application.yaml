@@ -25,10 +25,10 @@ app:
     topics:
       orders: orders
       payments: payments
+    publication:
+      cron: "*/5 * * * * *"
   outbox:
     batch-size: 10
-  publication:
-    cron: '*/5 * * * * *'
 
 server:
   port: 8081
