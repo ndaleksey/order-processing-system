@@ -10,7 +10,7 @@ import java.util.UUID;
  */
 @Component
 public class FakePaymentProvider implements PaymentProvider {
-    public static String INSUFFICIENT_FUNDS = "Insufficient funds";
+    public static final String INSUFFICIENT_FUNDS = "Insufficient funds";
 
     @Override
     public PaymentResult charge(UUID orderId, BigDecimal amount) {

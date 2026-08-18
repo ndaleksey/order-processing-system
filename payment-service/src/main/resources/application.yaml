@@ -24,6 +24,11 @@ app:
   kafka:
     topics:
       orders: orders
+      payments: payments
+  outbox:
+    batch-size: 10
+  publication:
+    cron: '*/5 * * * * *'
 
 server:
   port: 8081
