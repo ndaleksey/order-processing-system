@@ -61,7 +61,22 @@ public class Order {
     }
 
     public void markConfirmed() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only CREATED order can be confirmed");
+
+        }
+
         this.status = OrderStatus.CONFIRMED;
+        this.updatedAt = Instant.now();
+    }
+
+    public void markCanceled() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only CREATED order can be canceled");
+        }
+
+        this.status = OrderStatus.CANCELED;
+        this.updatedAt = Instant.now();
     }
 
     public void changeQuantity(UUID itemId, Integer quantity) {
@@ -73,15 +88,10 @@ public class Order {
     }
 
     private OrderItem findItem(UUID itemId) {
-        return items.stream()
-                .filter(item -> item.getId().equals(itemId))
-                .findFirst()
-                .orElseThrow(IllegalStateException::new);
+        return items.stream().filter(item -> item.getId().equals(itemId)).findFirst().orElseThrow(IllegalStateException::new);
     }
 
     private void recalcTotal() {
-        this.totalPrice = items.stream()
-                .map(i -> i.getProductPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        this.totalPrice = items.stream().map(i -> i.getProductPrice().multiply(BigDecimal.valueOf(i.getQuantity()))).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
