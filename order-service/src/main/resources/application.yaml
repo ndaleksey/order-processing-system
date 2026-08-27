@@ -37,5 +37,5 @@ app:
     publication:
       cron: "*/5 * * * * *"
     topics:
-      order-events: order.events
+      orders: orders
 

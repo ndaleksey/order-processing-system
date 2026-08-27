@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -20,27 +19,35 @@ import java.util.UUID;
 public class OutboxEvent {
 
     @Id
-    @UuidGenerator
     private UUID id;
 
     private String type;
 
+    @Column(name = "aggregated_id", nullable = false)
     private UUID aggregateId;
 
+    @Column(name="created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "published_at")
     private Instant publishedAt;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", columnDefinition = "jsonb", nullable = false)
     private String payload;
 
-    public static OutboxEvent orderCreated(UUID orderId, String payload) {
+    public static OutboxEvent orderCreated(
+            UUID eventId,
+            UUID orderId,
+            Instant createdAt,
+            String payload) {
         var event = new OutboxEvent();
+        event.id = eventId;
         event.type = "ORDER_CREATED";
         event.aggregateId = orderId;
-        event.createdAt = Instant.now();
+        event.createdAt = createdAt;
         event.payload = payload;
+
         return event;
     }
 

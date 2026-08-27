@@ -1,0 +1,59 @@
+package com.nd.paymentservice.payment.application;
+
+import com.nd.paymentservice.payment.domain.Payment;
+import com.nd.paymentservice.payment.messaging.event.OrderCreatedEvent;
+import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEvent;
+import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEventRepository;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEvent;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventFactory;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventRepository;
+import com.nd.paymentservice.payment.persistence.PaymentRepository;
+import com.nd.paymentservice.payment.provider.PaymentProvider;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @since 2026
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PaymentService {
+
+    private final PaymentRepository paymentRepository;
+    private final ProcessedEventRepository processedEventRepository;
+    private final PaymentProvider paymentProvider;
+    private final OutboxEventRepository outboxEventRepository;
+    private final OutboxEventFactory outboxEventFactory;
+
+    @Transactional
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        if (processedEventRepository.existsById(event.eventId())) {
+            log.info("OrderCreated event already processed: eventId={}", event.eventId());
+            return;
+        }
+
+        var payment = Payment.create(event.orderId(), event.totalAmount());
+        var result = paymentProvider.charge(event.orderId(), event.totalAmount());
+        OutboxEvent outboxEvent;
+
+        if (result.successful()) {
+            payment.succeed();
+
+            var savedPayment = paymentRepository.save(payment);
+
+            outboxEvent = outboxEventFactory.createPaymentSucceeded(savedPayment);
+        } else {
+            payment.fail();
+
+            var savedPayment = paymentRepository.save(payment);
+
+            outboxEvent = outboxEventFactory.createPaymentFailed(savedPayment, result.failureReason());
+        }
+
+        processedEventRepository.save(ProcessedEvent.create(event.eventId()));
+        outboxEventRepository.save(outboxEvent);
+    }
+}
