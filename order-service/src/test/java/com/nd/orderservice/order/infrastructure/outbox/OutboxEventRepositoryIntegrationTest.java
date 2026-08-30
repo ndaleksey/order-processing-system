@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.infrastructure.outbox;
 
 import com.nd.orderservice.order.domain.Order;
+import com.nd.orderservice.order.persistence.OrderRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,9 @@ class OutboxEventRepositoryIntegrationTest {
     private EntityManager entityManager;
 
     @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private OutboxEventFactory outboxEventFactory;
 
     @Transactional
@@ -33,6 +37,7 @@ class OutboxEventRepositoryIntegrationTest {
     void shouldReturnOnlyUnpublishedEvents() {
         var customerId = UUID.randomUUID();
         var order = Order.create(customerId);
+        order = orderRepository.save(order);
 
         var event1 = outboxEventFactory.createOrderCreated(order);
 

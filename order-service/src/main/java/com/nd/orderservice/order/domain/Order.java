@@ -88,10 +88,15 @@ public class Order {
     }
 
     private OrderItem findItem(UUID itemId) {
-        return items.stream().filter(item -> item.getId().equals(itemId)).findFirst().orElseThrow(IllegalStateException::new);
+        return items.stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
     }
 
     private void recalcTotal() {
-        this.totalPrice = items.stream().map(i -> i.getProductPrice().multiply(BigDecimal.valueOf(i.getQuantity()))).reduce(BigDecimal.ZERO, BigDecimal::add);
+        this.totalPrice = items.stream()
+                .map(i -> i.getProductPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
