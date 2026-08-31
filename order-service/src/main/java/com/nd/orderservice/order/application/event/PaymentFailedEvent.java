@@ -1,4 +1,4 @@
-package com.nd.paymentservice.payment.messaging.event;
+package com.nd.orderservice.order.application.event;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -43,3 +43,4 @@ public record PaymentFailedEvent(
                 occurredAt);
     }
 }
+

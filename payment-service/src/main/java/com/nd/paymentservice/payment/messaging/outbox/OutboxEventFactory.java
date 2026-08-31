@@ -23,7 +23,7 @@ public class OutboxEventFactory {
         var eventId = UUID.randomUUID();
         var occurredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
-        var event = new PaymentSucceededEvent(
+        var event = PaymentSucceededEvent.create(
                 eventId,
                 payment.getOrderId(),
                 payment.getId(),
@@ -40,7 +40,7 @@ public class OutboxEventFactory {
         var eventId = UUID.randomUUID();
         var occurredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
-        var event = new PaymentFailedEvent(
+        var event = PaymentFailedEvent.create(
                 eventId,
                 payment.getOrderId(),
                 payment.getId(),

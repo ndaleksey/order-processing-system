@@ -61,7 +61,22 @@ public class Order {
     }
 
     public void markConfirmed() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only CREATED order can be confirmed");
+
+        }
+
         this.status = OrderStatus.CONFIRMED;
+        this.updatedAt = Instant.now();
+    }
+
+    public void markCanceled() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only CREATED order can be canceled");
+        }
+
+        this.status = OrderStatus.CANCELED;
+        this.updatedAt = Instant.now();
     }
 
     public void changeQuantity(UUID itemId, Integer quantity) {

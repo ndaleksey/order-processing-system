@@ -1,0 +1,28 @@
+package com.nd.paymentservice.payment.messaging.event;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+/**
+ * @since 2026
+ */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "eventType",
+        visible = true
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(
+                value = PaymentSucceededEvent.class,
+                name = "PAYMENT_SUCCEEDED"
+        ),
+        @JsonSubTypes.Type(
+                value = PaymentFailedEvent.class,
+                name = "PAYMENT_FAILED"
+        ),
+})
+public sealed interface PaymentEvent permits PaymentSucceededEvent, PaymentFailedEvent {
+    @SuppressWarnings("unused")
+    EventType eventType();
+}
