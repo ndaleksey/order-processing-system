@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 /**
  * @since 2026
  */
-@SuppressWarnings("ALL")
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
@@ -24,5 +23,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         ),
 })
 public sealed interface PaymentEvent permits PaymentSucceededEvent, PaymentFailedEvent {
+    @SuppressWarnings("unused")
     EventType eventType();
 }

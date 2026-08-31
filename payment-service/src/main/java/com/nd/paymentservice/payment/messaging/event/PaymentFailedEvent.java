@@ -20,6 +20,7 @@ public record PaymentFailedEvent(
         Objects.requireNonNull(orderId, "orderId must not be null");
         Objects.requireNonNull(paymentId, "paymentId must not be null");
         Objects.requireNonNull(occurredAt, "occurredAt must not be null");
+        Objects.requireNonNull(failureReason);
 
         if (eventType != EventType.PAYMENT_FAILED) {
             throw new IllegalArgumentException("PaymentFailedEvent must have PAYMENT_FAILED type");

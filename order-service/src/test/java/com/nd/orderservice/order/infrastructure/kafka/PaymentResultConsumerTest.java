@@ -3,6 +3,7 @@ package com.nd.orderservice.order.infrastructure.kafka;
 import com.nd.orderservice.order.application.OrderPaymentResultService;
 import com.nd.orderservice.order.application.event.PaymentFailedEvent;
 import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,8 +29,12 @@ class PaymentResultConsumerTest {
     @Mock
     private OrderPaymentResultService orderPaymentResultService;
 
-    @InjectMocks
     private PaymentResultConsumer paymentResultConsumer;
+
+    @BeforeEach
+    void setUp() {
+        paymentResultConsumer = new PaymentResultConsumer(objectMapper, orderPaymentResultService);
+    }
 
     @Test
     void shouldHandlePaymentSucceededEvent() {
