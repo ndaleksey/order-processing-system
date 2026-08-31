@@ -43,7 +43,7 @@ public class OrderPaymentResultServiceRollbackIntegrationTest {
         var order = Order.create(UUID.randomUUID());
         var savedOrder = orderRepository.saveAndFlush(order);
 
-        var event = new PaymentSucceededEvent(eventId, savedOrder.getId(), paymentId, Instant.now());
+        var event = PaymentSucceededEvent.create(eventId, savedOrder.getId(), paymentId, Instant.now());
 
         when(processedEventRepositoryMock.existsById(eventId)).thenReturn(false);
         when(processedEventRepositoryMock.save(any(ProcessedEvent.class))).thenThrow(new RuntimeException());

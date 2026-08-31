@@ -24,7 +24,7 @@ class OrderEventProducerTest {
 
     @Test
     void shouldSendEventToConfiguredTopicWithAggregateIdAsKey() {
-        var topicsProperties = new KafkaTopicsProperties("orders");
+        var topicsProperties = new KafkaTopicsProperties("orders", "payments");
         var orderEventProducer =
                 new OrderEventProducer(kafkaTemplate, topicsProperties);
         var expectedFuture = new CompletableFuture<SendResult<String, String>>();

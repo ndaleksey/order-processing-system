@@ -40,7 +40,7 @@ class OrderPaymentResultServiceIntegrationTest {
         var order = Order.create(UUID.randomUUID());
         var savedOrder = orderRepository.saveAndFlush(order);
 
-        var event = new PaymentSucceededEvent(eventId, savedOrder.getId(), paymentId, Instant.now());
+        var event = PaymentSucceededEvent.create(eventId, savedOrder.getId(), paymentId, Instant.now());
 
         orderPaymentResultService.handlePaymentSucceededEvent(event);
 

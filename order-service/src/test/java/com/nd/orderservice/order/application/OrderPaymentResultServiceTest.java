@@ -49,7 +49,7 @@ class OrderPaymentResultServiceTest {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();
-        var event = new PaymentSucceededEvent(eventId, orderId, paymentId, Instant.now());
+        var event = PaymentSucceededEvent.create(eventId, orderId, paymentId, Instant.now());
         var order = Order.create(UUID.randomUUID());
 
         when(processedEventRepository.existsById(event.eventId())).thenReturn(false);
@@ -69,7 +69,7 @@ class OrderPaymentResultServiceTest {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();
-        var event = new PaymentFailedEvent(eventId, orderId, paymentId, "Insufficient funds", Instant.now());
+        var event = PaymentFailedEvent.create(eventId, orderId, paymentId, "Insufficient funds", Instant.now());
         var order = Order.create(UUID.randomUUID());
 
         when(processedEventRepository.existsById(event.eventId())).thenReturn(false);
@@ -89,7 +89,7 @@ class OrderPaymentResultServiceTest {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();
-        var event = new PaymentSucceededEvent(eventId, orderId, paymentId, Instant.now());
+        var event = PaymentSucceededEvent.create(eventId, orderId, paymentId, Instant.now());
 
         when(processedEventRepository.existsById(event.eventId())).thenReturn(true);
 
@@ -104,7 +104,7 @@ class OrderPaymentResultServiceTest {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();
-        var event = new PaymentFailedEvent(eventId, orderId, paymentId, "Insufficient funds", Instant.now());
+        var event = PaymentFailedEvent.create(eventId, orderId, paymentId, "Insufficient funds", Instant.now());
 
         when(processedEventRepository.existsById(event.eventId())).thenReturn(true);
 
@@ -119,7 +119,7 @@ class OrderPaymentResultServiceTest {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();
-        var event = new PaymentSucceededEvent(eventId, orderId, paymentId, Instant.now());
+        var event = PaymentSucceededEvent.create(eventId, orderId, paymentId, Instant.now());
 
         when(processedEventRepository.existsById(event.eventId())).thenReturn(false);
         when(orderRepository.findById(event.orderId())).thenReturn(Optional.empty());
