@@ -19,3 +19,5 @@ build/
 
 **/.idea/
 **/target/
+
+k8s/**/secret.yaml
