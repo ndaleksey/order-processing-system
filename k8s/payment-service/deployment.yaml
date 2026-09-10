@@ -24,3 +24,18 @@ spec:
                 name: payment-service-config
             - secretRef:
                 name: payment-service-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
