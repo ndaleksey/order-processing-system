@@ -18,9 +18,24 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: 192.168.56.1:5000/order-service:8215826
+          image: 192.168.56.1:5000/order-service:bd566c0
           envFrom:
             - configMapRef:
                 name: order-service-config
             - secretRef:
                 name: order-service-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
