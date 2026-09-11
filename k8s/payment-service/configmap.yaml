@@ -5,5 +5,5 @@ metadata:
   name: payment-service-config
 
 data:
-  DB_URL: jdbc:postgresql://192.168.56.1:5432/payment_db
-  KAFKA_BOOTSTRAP_SERVERS: 192.168.56.1:39092
+  DB_URL: "jdbc:postgresql://192.168.56.1:5432/payment_db"
+  KAFKA_BOOTSTRAP_SERVERS: "192.168.56.1:39092"
