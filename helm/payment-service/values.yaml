@@ -1,0 +1,11 @@
+replicaCount: 1
+
+image:
+  repository: 192.168.56.1:5000/payment-service
+  tag: bd566c0
+
+containerPort: 8081
+
+config:
+  dbUrl: jdbc:postgresql://192.168.56.1:5432/payment_db
+  kafkaBootstrapServers: 192.168.56.1:39092
