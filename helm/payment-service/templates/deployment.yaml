@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: "{{ .Values.image.repository}}:{{.Values.image.tag}}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           envFrom:
             - configMapRef:
                 name: payment-service-config
