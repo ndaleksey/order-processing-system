@@ -1,6 +1,8 @@
 package com.nd.e2e.order;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -15,6 +17,11 @@ import static org.hamcrest.Matchers.notNullValue;
  * @since 2026
  */
 class OrderFlowIT {
+
+    @BeforeAll
+    static void setUp() {
+        RestAssured.baseURI = System.getProperty("e2e.base-url", "http://localhost:18080");
+    }
 
     @Test
     void shouldConfirmOrderAfterSuccessfulPayment() {
@@ -37,7 +44,6 @@ class OrderFlowIT {
 
         // GIVEN
         String orderId = given()
-                .baseUri("http://localhost:18080")
                 .contentType(ContentType.JSON)
                 .body(body)
 
@@ -58,7 +64,6 @@ class OrderFlowIT {
                 .atMost(Duration.ofSeconds(10))
                 .untilAsserted(() ->
                         given()
-                                .baseUri("http://localhost:18080")
 
                                 // WHEN
                                 .when()
