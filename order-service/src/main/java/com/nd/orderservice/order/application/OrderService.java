@@ -1,13 +1,12 @@
 package com.nd.orderservice.order.application;
 
 import com.nd.orderservice.order.application.command.CreateOrderCommand;
+import com.nd.orderservice.order.application.exception.OrderNotFoundException;
 import com.nd.orderservice.order.domain.Order;
 import com.nd.orderservice.order.domain.OrderItem;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
 import com.nd.orderservice.order.persistence.OrderRepository;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,8 +43,8 @@ public class OrderService {
         return savedOrder;
     }
 
-    public Order getById(@NotNull UUID id) {
+    public Order getById(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Can't find such order"));
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
     }
 }
