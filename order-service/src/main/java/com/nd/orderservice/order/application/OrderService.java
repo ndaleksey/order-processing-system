@@ -6,10 +6,14 @@ import com.nd.orderservice.order.domain.OrderItem;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
 import com.nd.orderservice.order.persistence.OrderRepository;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 /**
  * @since 2026
@@ -28,7 +32,7 @@ public class OrderService {
         var order = Order.create(command.customerId());
 
         for (var item : command.items()) {
-            order.addItem(OrderItem.create(item.productId(), item.name(), item.productPrice(), item.quantity()));
+            order.addItem(OrderItem.create(item.productId(), item.productName(), item.productPrice(), item.quantity()));
         }
 
         var savedOrder = repository.save(order);
@@ -38,5 +42,10 @@ public class OrderService {
         outboxEventRepository.save(outboxEvent);
 
         return savedOrder;
+    }
+
+    public Order getById(@NotNull UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Can't find such order"));
     }
 }
