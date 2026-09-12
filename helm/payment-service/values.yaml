@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: 192.168.56.1:5000/payment-service
-  tag: bd566c0
+  tag: 9816fd6
 
 containerPort: 8081
 
