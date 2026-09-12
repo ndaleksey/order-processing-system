@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.application;
 
 import com.nd.orderservice.order.application.command.CreateOrderCommand;
+import com.nd.orderservice.order.application.exception.OrderNotFoundException;
 import com.nd.orderservice.order.domain.Order;
 import com.nd.orderservice.order.domain.OrderItem;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 /**
  * @since 2026
@@ -28,7 +31,7 @@ public class OrderService {
         var order = Order.create(command.customerId());
 
         for (var item : command.items()) {
-            order.addItem(OrderItem.create(item.productId(), item.name(), item.productPrice(), item.quantity()));
+            order.addItem(OrderItem.create(item.productId(), item.productName(), item.productPrice(), item.quantity()));
         }
 
         var savedOrder = repository.save(order);
@@ -38,5 +41,10 @@ public class OrderService {
         outboxEventRepository.save(outboxEvent);
 
         return savedOrder;
+    }
+
+    public Order getById(UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
     }
 }

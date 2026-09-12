@@ -18,7 +18,7 @@ public record OrderDto(
 ) {
     public record Item(
             UUID productId,
-            String name,
+            String productName,
             BigDecimal productPrice,
             int quantity
     ) {

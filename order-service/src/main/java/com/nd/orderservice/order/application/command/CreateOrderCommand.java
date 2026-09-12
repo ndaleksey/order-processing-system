@@ -13,7 +13,7 @@ public record CreateOrderCommand(
 ) {
     public record Item(
             UUID productId,
-            String name,
+            String productName,
             BigDecimal productPrice,
             int quantity
     ) {
