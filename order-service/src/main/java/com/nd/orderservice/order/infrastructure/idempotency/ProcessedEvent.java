@@ -16,7 +16,7 @@ import java.util.UUID;
  */
 @Getter
 @Entity
-@Table(name = "processed_event")
+@Table(name = "processed_events")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProcessedEvent {
 

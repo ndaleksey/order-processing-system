@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "outbox_event")
+@Table(name = "outbox_events")
 public class OutboxEvent {
 
     @Id

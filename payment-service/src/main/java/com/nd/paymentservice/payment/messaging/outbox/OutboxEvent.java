@@ -19,7 +19,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "outbox")
+@Table(name = "outbox_events")
 public class OutboxEvent {
     @Id
     private UUID id;
