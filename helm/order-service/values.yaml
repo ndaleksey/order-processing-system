@@ -2,7 +2,8 @@ replicaCount: 1
 
 image:
   repository: 192.168.56.1:5000/order-service
-  tag: 9816fd6
+  tag: efcfa28
+
 
 containerPort: 8080
 
