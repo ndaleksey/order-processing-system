@@ -2,31 +2,11 @@ stages:
   - test
   - build
 
-variables:
-  ORDER_SERVICE_IMAGE: "localhost:5000/order-service"
-  PAYMENT_SERVICE_IMAGE: "localhost:5000/payment-service"
+include:
+  - local: 'order-service/.gitlab-ci.yml'
+  - local: 'payment-service/.gitlab-ci.yml'
 
 test:
   stage: test
   script:
     - mvn test
-
-build-order-service:
-  stage: build
-  script:
-    - |
-      docker build \
-        -f order-service/Dockerfile \
-        -t "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
-        .
-    - docker push "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-
-build-payment-service:
-  stage: build
-  script:
-    - |
-      docker build \
-        -f payment-service/Dockerfile \
-        -t "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
-        .
-    - docker push "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"

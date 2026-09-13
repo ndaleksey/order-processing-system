@@ -1,0 +1,12 @@
+variables:
+  PAYMENT_SERVICE_IMAGE: "localhost:5000/payment-service"
+
+build-payment-service:
+  stage: build
+  script:
+    - |
+      docker build \
+        -f payment-service/Dockerfile \
+        -t "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
+        .
+    - docker push "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
