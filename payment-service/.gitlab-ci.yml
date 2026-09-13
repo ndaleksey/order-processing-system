@@ -12,7 +12,7 @@ build-payment-service:
         .
     - docker push "${SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
 
-deploy-order-service:
+deploy-payment-service:
   stage: deploy
   script:
     - |
