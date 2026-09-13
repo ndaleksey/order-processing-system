@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - deploy
 
 include:
   - local: 'order-service/.gitlab-ci.yml'

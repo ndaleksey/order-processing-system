@@ -1,5 +1,6 @@
 variables:
-  PAYMENT_SERVICE_IMAGE: "localhost:5000/payment-service"
+  SERVICE_NAME: payment-service
+  SERVICE_IMAGE: "localhost:5000/payment-service"
 
 build-payment-service:
   stage: build
@@ -7,6 +8,13 @@ build-payment-service:
     - |
       docker build \
         -f payment-service/Dockerfile \
-        -t "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
+        -t "${SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
         .
-    - docker push "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    - docker push "${SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+
+deploy-order-service:
+  stage: deploy
+  script:
+    - |
+      helm upgrade --install ${SERVICE_NAME} ./helm/${SERVICE_NAME} \
+        --set image.tag="${CI_COMMIT_SHORT_SHA}"

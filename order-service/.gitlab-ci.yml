@@ -1,12 +1,20 @@
 variables:
-  ORDER_SERVICE_IMAGE: "localhost:5000/order-service"
+  SERVICE_NAME: order-service
+  SERVICE_IMAGE: "localhost:5000/order-service"
 
 build-order-service:
   stage: build
   script:
     - |
       docker build \
-        -f order-service/Dockerfile \
-        -t "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
+        -f ${SERVICE_NAME}/Dockerfile \
+        -t "${SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
         .
-    - docker push "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    - docker push "${SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+
+deploy-order-service:
+  stage: deploy
+  script:
+    - |
+      helm upgrade --install ${SERVICE_NAME} ./helm/${SERVICE_NAME} \
+        --set image.tag="${CI_COMMIT_SHORT_SHA}"
