@@ -1,7 +1,21 @@
 stages:
   - test
+  - build
+
+variables:
+  ORDER_SERVICE_IMAGE: "localhost:5000/order-service"
 
 test:
   stage: test
   script:
     - mvn test
+
+build-order-service:
+  stage: build
+  script:
+    - |
+      docker build \
+        -f order-service/Dockerfile \       
+        -t "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+        .
+    - docker push "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
