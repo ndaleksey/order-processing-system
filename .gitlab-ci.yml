@@ -14,8 +14,8 @@ build-order-service:
   stage: build
   script:
     - |
-        docker build \ 
+        docker build \
           -f order-service/Dockerfile \       
-          -t "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+          -t "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
           .
     - docker push "${ORDER_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
