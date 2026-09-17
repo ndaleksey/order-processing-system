@@ -1,4 +1,4 @@
-package com.nd.inventoryservice.domain;
+package com.nd.inventoryservice.inventory.domain;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,7 @@ class InventoryItemTest {
     }
 
     @Test
-    public void shouldRejectNonPositiveReservationQuantity() {
+    void shouldRejectNegativeReservationQuantity() {
         // GIVEN
         var productId = UUID.randomUUID();
         var item = InventoryItem.create(productId, 10);
@@ -50,7 +50,7 @@ class InventoryItemTest {
     }
 
     @Test
-    public void shouldRejectZeroReservationQuantity() {
+    void shouldRejectZeroReservationQuantity() {
         // GIVEN
         var productId = UUID.randomUUID();
         var item = InventoryItem.create(productId, 10);
@@ -62,14 +62,14 @@ class InventoryItemTest {
     }
 
     @Test
-    public void shouldRejectNegativeInitialAvailableQuantity() {
+    void shouldRejectNegativeInitialAvailableQuantity() {
         // GIVEN / WHEN / THEN
         var productId = UUID.randomUUID();
         assertThrows(IllegalArgumentException.class, () -> InventoryItem.create(productId, -10));
     }
 
     @Test
-    public void shouldAllowCreatingItemWithZeroAvailableQuantity() {
+    void shouldAllowCreatingItemWithZeroAvailableQuantity() {
         // GIVEN / WHEN / THEN
         var productId = UUID.randomUUID();
         assertDoesNotThrow(() -> {
@@ -82,7 +82,7 @@ class InventoryItemTest {
     }
 
     @Test
-    public void shouldRejectNullProductId() {
+    void shouldRejectNullProductId() {
         // GIVEN / WHEN / THEN
         assertThrows(NullPointerException.class, () -> InventoryItem.create(null, 0));
     }

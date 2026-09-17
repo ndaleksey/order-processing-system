@@ -1,4 +1,4 @@
-package com.nd.inventoryservice.domain;
+package com.nd.inventoryservice.inventory.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
