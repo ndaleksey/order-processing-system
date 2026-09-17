@@ -18,7 +18,8 @@ public class InventoryReservationService {
 
     @Transactional
     public void reserve(UUID productId, int quantity) {
-        var item = repository.findByProductId(productId).orElseThrow();
+        var item = repository.findByProductId(productId)
+                .orElseThrow(() -> new IllegalStateException("Inventory item not found: " + productId));
 
         item.reserve(quantity);
     }

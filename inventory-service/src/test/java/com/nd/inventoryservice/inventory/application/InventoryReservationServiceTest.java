@@ -48,10 +48,10 @@ class InventoryReservationServiceTest {
 
         // GIVEN
         when(repository.findByProductId(productId))
-                .thenThrow(IllegalArgumentException.class);
+                .thenReturn(Optional.empty());
 
         // WHEN / THEN
-        assertThrows(IllegalArgumentException.class, () -> service.reserve(productId, 3));
+        assertThrows(IllegalStateException.class, () -> service.reserve(productId, 3));
     }
 
 }
