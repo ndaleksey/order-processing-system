@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,14 +18,19 @@ import java.util.UUID;
  */
 @Entity
 @Getter
-@Table(name = "inventory_items")
+@Table(name = "inventory_items", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_inventory_items_product_id",
+                columnNames = "product_id"
+        )
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InventoryItem {
     @Id
     @UuidGenerator
     private UUID id;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, unique = true)
     private UUID productId;
 
     @Column(nullable = false)
