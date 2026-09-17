@@ -17,7 +17,7 @@ deploy-payment-service:
   script:
     - |
       helm upgrade --install ${PAYMENT_SERVICE_NAME} ./helm/${PAYMENT_SERVICE_NAME} \
-        --set image.tag="${CI_COMMIT_SHORT_SHA}"
+        --set image.tag="${CI_COMMIT_SHORT_SHA}" \
         --wait \
         --rollback-on-failure \
         --timeout 2m
