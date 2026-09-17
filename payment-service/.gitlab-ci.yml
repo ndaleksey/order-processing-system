@@ -1,0 +1,23 @@
+variables:
+  PAYMENT_SERVICE_NAME: payment-service
+  PAYMENT_SERVICE_IMAGE: "localhost:5000/payment-service"
+
+build-payment-service:
+  stage: build
+  script:
+    - |
+      docker build \
+        -f payment-service/Dockerfile \
+        -t "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
+        .
+    - docker push "${PAYMENT_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+
+deploy-payment-service:
+  stage: deploy
+  script:
+    - |
+      helm upgrade --install ${PAYMENT_SERVICE_NAME} ./helm/${PAYMENT_SERVICE_NAME} \
+        --set image.tag="${CI_COMMIT_SHORT_SHA}" \
+        --wait \
+        --rollback-on-failure \
+        --timeout 2m

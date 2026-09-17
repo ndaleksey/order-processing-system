@@ -1,0 +1,13 @@
+stages:
+  - test
+  - build
+  - deploy
+
+include:
+  - local: 'order-service/.gitlab-ci.yml'
+  - local: 'payment-service/.gitlab-ci.yml'
+
+test:
+  stage: test
+  script:
+    - mvn test
