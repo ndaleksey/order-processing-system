@@ -26,7 +26,7 @@ spec:
                 name: order-service-secret
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness-broken
+              path: /actuator/health/readiness
               port: {{ .Values.containerPort }}
             periodSeconds: 5
             timeoutSeconds: 2
