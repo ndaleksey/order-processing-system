@@ -17,4 +17,6 @@ deploy-order-service:
   script:
     - |
       helm upgrade --install ${ORDER_SERVICE_NAME} ./helm/${ORDER_SERVICE_NAME} \
-        --set image.tag="${CI_COMMIT_SHORT_SHA}"
+        --set image.tag="${CI_COMMIT_SHORT_SHA}" \
+        --wait \
+        --timeout 2m
