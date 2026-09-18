@@ -6,6 +6,7 @@ import com.nd.paymentservice.payment.messaging.event.PaymentFailedEvent;
 import com.nd.paymentservice.payment.messaging.event.PaymentSucceededEvent;
 import com.nd.paymentservice.payment.messaging.idempotency.ProcessedEventRepository;
 import com.nd.paymentservice.payment.messaging.outbox.OutboxEventRepository;
+import com.nd.paymentservice.payment.messaging.outbox.OutboxEventType;
 import com.nd.paymentservice.payment.persistence.PaymentRepository;
 import com.nd.paymentservice.payment.provider.FakePaymentProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +79,7 @@ class PaymentServiceIntegrationTest {
         assertEquals(outboxEvent.getCreatedAt(), payloadEvent.occurredAt());
 
         assertEquals(payment.getId(), outboxEvent.getAggregatedId());
-        assertEquals("PAYMENT_SUCCEEDED", outboxEvent.getType());
+        assertEquals(OutboxEventType.PAYMENT_SUCCEEDED, outboxEvent.getType());
         assertNull(outboxEvent.getPublishedAt());
 
         assertTrue(processedEventRepository.existsById(eventId));
@@ -114,7 +115,7 @@ class PaymentServiceIntegrationTest {
 
         var outboxEvent = outboxEvents.getFirst();
 
-        assertEquals("PAYMENT_FAILED", outboxEvent.getType());
+        assertEquals(OutboxEventType.PAYMENT_FAILED, outboxEvent.getType());
         assertEquals(payment.getId(), outboxEvent.getAggregatedId());
         assertNull(outboxEvent.getPublishedAt());
 

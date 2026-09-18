@@ -9,5 +9,8 @@ import org.springframework.validation.annotation.Validated;
  */
 @Validated
 @ConfigurationProperties(prefix = "app.kafka.topics")
-public record KafkaTopicsProperties(@NotBlank String orders, @NotBlank String payments) {
+public record KafkaTopicsProperties(
+        @NotBlank String orders,
+        @NotBlank String payments,
+        @NotBlank String inventory) {
 }

@@ -3,6 +3,7 @@ package com.nd.orderservice.order.application;
 
 import com.nd.orderservice.order.application.command.CreateOrderCommand;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventType;
 import com.nd.orderservice.order.persistence.OrderRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
@@ -70,6 +70,6 @@ class OrderServiceIntegrationTest {
                 .orElseThrow();
 
         assertEquals(order.getId(), event.getAggregateId());
-        assertEquals("ORDER_CREATED", event.getType());
+        assertEquals(OutboxEventType.ORDER_CREATED, event.getType());
     }
 }

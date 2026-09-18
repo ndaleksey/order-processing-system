@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.infrastructure.outbox;
 
-import com.nd.orderservice.order.infrastructure.kafka.OrderEventProducer;
+import com.nd.orderservice.order.infrastructure.kafka.KafkaEventProducer;
+import com.nd.orderservice.order.infrastructure.kafka.KafkaTopicNameResolver;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +32,10 @@ class OutboxPublisherTest {
     private OutboxEventRepository outboxEventRepository;
 
     @Mock
-    private OrderEventProducer orderEventProducer;
+    private KafkaEventProducer kafkaEventProducer;
+
+    @Mock
+    private KafkaTopicNameResolver kafkaTopicNameResolver;
 
     @InjectMocks
     private OutboxPublisher outboxPublisher;
@@ -59,14 +63,17 @@ class OutboxPublisherTest {
         when(outboxEventRepository.findTop10ByPublishedAtIsNullOrderByCreatedAtAsc())
                 .thenReturn(List.of(event));
 
-        when(orderEventProducer.send(orderId, payload))
+        when(kafkaTopicNameResolver.resolve(OutboxEventType.ORDER_CREATED))
+                .thenReturn("orders");
+
+        when(kafkaEventProducer.send("orders", orderId, payload))
                 .thenReturn(completableFuture);
 
         assertNull(event.getPublishedAt());
 
         outboxPublisher.publishPendingEvents();
 
-        verify(orderEventProducer).send(orderId, payload);
+        verify(kafkaEventProducer).send("orders", orderId, payload);
 
         assertNotNull(event.getPublishedAt());
     }
@@ -85,13 +92,16 @@ class OutboxPublisherTest {
         when(outboxEventRepository.findTop10ByPublishedAtIsNullOrderByCreatedAtAsc())
                 .thenReturn(List.of(event));
 
-        when(orderEventProducer.send(orderId, payload))
+        when(kafkaTopicNameResolver.resolve(OutboxEventType.ORDER_CREATED))
+                .thenReturn("orders");
+
+        when(kafkaEventProducer.send("orders", orderId, payload))
                 .thenReturn(completableFuture);
 
         assertThrows(CompletionException.class,
                 () -> outboxPublisher.publishPendingEvents());
 
-        verify(orderEventProducer).send(orderId, payload);
+        verify(kafkaEventProducer).send("orders", orderId, payload);
 
         assertNull(event.getPublishedAt());
     }
