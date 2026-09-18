@@ -57,7 +57,7 @@ class OrderPaymentResultServiceTest {
 
         orderPaymentResultService.handlePaymentSucceededEvent(event);
 
-        assertEquals(OrderStatus.CONFIRMED, order.getStatus());
+        assertEquals(OrderStatus.PAID, order.getStatus());
 
         verify(processedEventRepository).save(captor.capture());
 

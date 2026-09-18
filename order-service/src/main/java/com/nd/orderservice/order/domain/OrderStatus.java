@@ -7,5 +7,6 @@ package com.nd.orderservice.order.domain;
 public enum OrderStatus {
     CREATED,
     CONFIRMED,
-    CANCELED
+    CANCELED,
+    PAID
 }

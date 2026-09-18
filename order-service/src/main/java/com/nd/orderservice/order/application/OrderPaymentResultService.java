@@ -31,7 +31,7 @@ public class OrderPaymentResultService {
         var order = orderRepository.findById(event.orderId())
                 .orElseThrow(() -> new IllegalStateException("Order not found: " + event.orderId()));
 
-        order.markConfirmed();
+        order.markPaid();
 
         processedEventRepository.save(ProcessedEvent.create(event.eventId()));
     }

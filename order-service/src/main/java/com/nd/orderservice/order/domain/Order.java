@@ -79,6 +79,15 @@ public class Order {
         this.updatedAt = Instant.now();
     }
 
+    public void markPaid() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only CREATED order can be paid");
+        }
+
+        this.status = OrderStatus.PAID;
+        this.updatedAt = Instant.now();
+    }
+
     public void changeQuantity(UUID itemId, Integer quantity) {
         var item = findItem(itemId);
 
