@@ -46,7 +46,7 @@ class OrderPaymentResultServiceIntegrationTest {
 
         savedOrder = orderRepository.findById(savedOrder.getId()).orElseThrow();
 
-        assertEquals(OrderStatus.CONFIRMED, savedOrder.getStatus());
+        assertEquals(OrderStatus.PAID, savedOrder.getStatus());
 
         var processedEvent = processedEventRepository.findById(eventId).orElseThrow();
 

@@ -4,6 +4,8 @@ import com.nd.orderservice.order.application.event.PaymentFailedEvent;
 import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEventRepository;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
 import com.nd.orderservice.order.persistence.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class OrderPaymentResultService {
+
     private final ProcessedEventRepository processedEventRepository;
     private final OrderRepository orderRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final OutboxEventFactory outboxEventFactory;
 
     @Transactional
     public void handlePaymentSucceededEvent(PaymentSucceededEvent event) {
@@ -32,6 +37,9 @@ public class OrderPaymentResultService {
                 .orElseThrow(() -> new IllegalStateException("Order not found: " + event.orderId()));
 
         order.markPaid();
+
+        var outboxEvent = outboxEventFactory.createInventoryReservationRequested(order);
+        outboxEventRepository.save(outboxEvent);
 
         processedEventRepository.save(ProcessedEvent.create(event.eventId()));
     }

@@ -51,6 +51,22 @@ public class OutboxEvent {
         return event;
     }
 
+    public static OutboxEvent inventoryReservationRequested(
+            UUID eventId,
+            UUID orderId,
+            Instant createdAt,
+            String payload
+    ) {
+        var event = new OutboxEvent();
+        event.id = eventId;
+        event.type = "INVENTORY_RESERVATION_REQUESTED";
+        event.aggregateId = orderId;
+        event.createdAt = createdAt;
+        event.payload = payload;
+
+        return event;
+    }
+
     public void markPublished() {
         this.publishedAt = Instant.now();
     }
