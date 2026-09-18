@@ -1,7 +1,7 @@
 package com.nd.orderservice.order.application;
 
-import com.nd.orderservice.order.application.event.PaymentFailedEvent;
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEventRepository;
 import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;

@@ -1,8 +1,8 @@
 package com.nd.orderservice.order.infrastructure.outbox;
 
-import com.nd.orderservice.order.application.event.InventoryReservationRequestedEvent;
-import com.nd.orderservice.order.application.event.OrderCreatedEvent;
-import com.nd.orderservice.order.application.event.mapper.ReservationItemMapper;
+import com.nd.orderservice.order.messaging.event.InventoryReservationRequestedEvent;
+import com.nd.orderservice.order.messaging.event.OrderCreatedEvent;
+import com.nd.orderservice.order.messaging.event.mapper.ReservationItemMapper;
 import com.nd.orderservice.order.domain.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -1,7 +1,7 @@
 package com.nd.orderservice.order.application;
 
-import com.nd.orderservice.order.application.event.PaymentFailedEvent;
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.domain.Order;
 import com.nd.orderservice.order.domain.OrderStatus;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
@@ -82,7 +82,7 @@ class OrderPaymentResultServiceTest {
     }
 
     @Test
-    void captorOutboxEvent() {
+    void shouldCancelOrderWhenPaymentFailed() {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();

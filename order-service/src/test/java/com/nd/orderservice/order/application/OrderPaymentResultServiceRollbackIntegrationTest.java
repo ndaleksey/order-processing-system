@@ -1,6 +1,6 @@
 package com.nd.orderservice.order.application;
 
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.domain.Order;
 import com.nd.orderservice.order.domain.OrderStatus;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;

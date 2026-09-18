@@ -1,4 +1,4 @@
-package com.nd.orderservice.order.application.event;
+package com.nd.orderservice.order.messaging.event;
 
 import java.math.BigDecimal;
 import java.time.Instant;

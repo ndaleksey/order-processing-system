@@ -1,6 +1,6 @@
-package com.nd.orderservice.order.application.event.mapper;
+package com.nd.orderservice.order.messaging.event.mapper;
 
-import com.nd.orderservice.order.application.event.ReservationItem;
+import com.nd.orderservice.order.messaging.event.ReservationItem;
 import com.nd.orderservice.order.domain.OrderItem;
 import org.mapstruct.Mapper;
 

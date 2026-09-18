@@ -1,4 +1,4 @@
-package com.nd.orderservice.order.application.event;
+package com.nd.orderservice.order.messaging.event;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
