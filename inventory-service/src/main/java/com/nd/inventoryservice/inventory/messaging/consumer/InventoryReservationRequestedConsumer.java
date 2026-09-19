@@ -1,0 +1,30 @@
+package com.nd.inventoryservice.inventory.messaging.consumer;
+
+import com.nd.inventoryservice.inventory.application.InventoryReservationService;
+import com.nd.inventoryservice.inventory.application.mapper.ReservationItemMapper;
+import com.nd.inventoryservice.inventory.messaging.event.InventoryReservationRequestedEvent;
+import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
+
+/**
+ * @since 2026
+ */
+@Component
+@RequiredArgsConstructor
+public class InventoryReservationRequestedConsumer {
+
+    private final ObjectMapper objectMapper;
+    private final InventoryReservationService reservationService;
+    private final ReservationItemMapper itemMapper;
+
+    @KafkaListener(
+            topics = "${app.kafka.topics.inventory}",
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void consume(String payload) {
+        var event = objectMapper.readValue(payload, InventoryReservationRequestedEvent.class);
+
+        reservationService.reserve(itemMapper.toReservationItems(event.items()));
+    }
+}

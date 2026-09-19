@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class KafkaTopicNameResolverTest {
     @Test
-    void resolveName() {
+    void shouldResolveTopicByOutboxEventType() {
         var topics = new KafkaTopicsProperties(
                 "orders",
                 "payments",
