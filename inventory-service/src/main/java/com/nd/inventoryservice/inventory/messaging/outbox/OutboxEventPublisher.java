@@ -26,7 +26,7 @@ public class OutboxEventPublisher {
         eventRepository.findByPublishedAtIsNullOrderByCreatedAtAsc(
                         Limit.of(outboxProperties.batchSize()))
                 .forEach(e -> {
-                    var result = eventProducer.send(topicsProperties.inventory(), e.getAggregateId(), e.getPayload())
+                    var result = eventProducer.send(topicsProperties.inventoryResults(), e.getAggregateId(), e.getPayload())
                             .join();
 
                     var metadata = result.getRecordMetadata();

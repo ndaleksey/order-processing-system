@@ -18,16 +18,8 @@ import java.util.UUID;
 public class InventoryReservationService {
 
     private final OutboxEventFactory eventFactory;
-    private final InventoryItemRepository repository;
     private final OutboxEventRepository eventRepository;
-
-    @Transactional
-    public void reserve(UUID productId, int quantity) {
-        var item = repository.findByProductId(productId)
-                .orElseThrow(() -> new IllegalStateException("Inventory item not found: " + productId));
-
-        item.reserve(quantity);
-    }
+    private final InventoryItemRepository repository;
 
     @Transactional
     public void reserve(ReserveInventoryCommand command) {
@@ -37,5 +29,12 @@ public class InventoryReservationService {
         var event = eventFactory.createInventoryReserved(command.orderId());
 
         eventRepository.save(event);
+    }
+
+    private void reserve(UUID productId, int quantity) {
+        var item = repository.findByProductId(productId)
+                .orElseThrow(() -> new IllegalStateException("Inventory item not found: " + productId));
+
+        item.reserve(quantity);
     }
 }
