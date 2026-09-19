@@ -1,12 +1,13 @@
 package com.nd.inventoryservice.inventory.application;
 
-import com.nd.inventoryservice.inventory.application.model.ReservationItem;
+import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
+import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventFactory;
+import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import com.nd.inventoryservice.inventory.persistence.InventoryItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -16,7 +17,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InventoryReservationService {
 
+    private final OutboxEventFactory eventFactory;
     private final InventoryItemRepository repository;
+    private final OutboxEventRepository eventRepository;
 
     @Transactional
     public void reserve(UUID productId, int quantity) {
@@ -27,8 +30,12 @@ public class InventoryReservationService {
     }
 
     @Transactional
-    public void reserve(List<ReservationItem> items) {
-        items.forEach(item ->
+    public void reserve(ReserveInventoryCommand command) {
+        command.items().forEach(item ->
                 reserve(item.productId(), item.quantity()));
+
+        var event = eventFactory.createInventoryReserved(command.orderId());
+
+        eventRepository.save(event);
     }
 }

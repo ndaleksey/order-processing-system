@@ -1,5 +1,6 @@
 package com.nd.inventoryservice.inventory.application;
 
+import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.model.ReservationItem;
 import com.nd.inventoryservice.inventory.domain.InventoryItem;
 import com.nd.inventoryservice.inventory.persistence.InventoryItemRepository;
@@ -47,6 +48,8 @@ class InventoryReservationServiceIntegrationTest {
     void shouldRollbackAllReservationsWhenAnyItemCannotBeReserved() {
 
         // GIVEN
+        var orderId = UUID.randomUUID();
+
         var productAId = UUID.randomUUID();
         var productBId = UUID.randomUUID();
 
@@ -56,8 +59,10 @@ class InventoryReservationServiceIntegrationTest {
         var itemA = new ReservationItem(productAId, 3);
         var itemB = new ReservationItem(productBId, 5);
 
+        var command = new ReserveInventoryCommand(orderId, List.of(itemA, itemB));
+
         // WHEN / THEN
-        assertThrows(IllegalArgumentException.class, () -> service.reserve(List.of(itemA, itemB)));
+        assertThrows(IllegalArgumentException.class, () -> service.reserve(command));
 
         // THEN
         var productA = repository.findByProductId(productAId).orElseThrow();

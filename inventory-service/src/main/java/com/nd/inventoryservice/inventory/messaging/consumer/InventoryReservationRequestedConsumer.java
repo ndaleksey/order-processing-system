@@ -1,6 +1,7 @@
 package com.nd.inventoryservice.inventory.messaging.consumer;
 
 import com.nd.inventoryservice.inventory.application.InventoryReservationService;
+import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.mapper.ReservationItemMapper;
 import com.nd.inventoryservice.inventory.messaging.event.InventoryReservationRequestedEvent;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,9 @@ public class InventoryReservationRequestedConsumer {
             groupId = "${spring.kafka.consumer.group-id}")
     public void consume(String payload) {
         var event = objectMapper.readValue(payload, InventoryReservationRequestedEvent.class);
+        var items = itemMapper.toReservationItems(event.items());
+        var command = new ReserveInventoryCommand(event.orderId(), items);
 
-        reservationService.reserve(itemMapper.toReservationItems(event.items()));
+        reservationService.reserve(command);
     }
 }
