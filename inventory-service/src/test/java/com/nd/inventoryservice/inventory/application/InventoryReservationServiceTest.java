@@ -52,8 +52,8 @@ class InventoryReservationServiceTest {
         var eventId = UUID.randomUUID();
         var outboxEvent = OutboxEvent.inventoryReserved(eventId, orderId, Instant.now(), "{}");
 
-        // GIVEN)
-        when(eventFactory.createInventoryReserved(orderId))
+        // GIVEN
+        when(eventFactory.createInventoryReservationSucceeded(orderId))
                 .thenReturn(outboxEvent);
 
         when(repository.findByProductId(productId))

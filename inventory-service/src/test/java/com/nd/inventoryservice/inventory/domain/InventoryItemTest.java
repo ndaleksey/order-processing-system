@@ -32,7 +32,7 @@ class InventoryItemTest {
         var item = InventoryItem.create(productId, 10);
 
         // WHEN / THEN
-        assertThrows(IllegalArgumentException.class, () -> item.reserve(20));
+        assertThrows(InventoryReservationException.class, () -> item.reserve(20));
 
         assertEquals(10, item.getAvailableQuantity());
     }
@@ -44,7 +44,7 @@ class InventoryItemTest {
         var item = InventoryItem.create(productId, 10);
 
         // WHEN / THEN
-        assertThrows(IllegalArgumentException.class, () -> item.reserve(-10));
+        assertThrows(InventoryReservationException.class, () -> item.reserve(-10));
 
         assertEquals(10, item.getAvailableQuantity());
     }
@@ -56,7 +56,7 @@ class InventoryItemTest {
         var item = InventoryItem.create(productId, 10);
 
         // WHEN / THEN
-        assertThrows(IllegalArgumentException.class, () -> item.reserve(0));
+        assertThrows(InventoryReservationException.class, () -> item.reserve(0));
 
         assertEquals(10, item.getAvailableQuantity());
     }
@@ -65,7 +65,7 @@ class InventoryItemTest {
     void shouldRejectNegativeInitialAvailableQuantity() {
         // GIVEN / WHEN / THEN
         var productId = UUID.randomUUID();
-        assertThrows(IllegalArgumentException.class, () -> InventoryItem.create(productId, -10));
+        assertThrows(InventoryReservationException.class, () -> InventoryItem.create(productId, -10));
     }
 
     @Test

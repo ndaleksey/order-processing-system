@@ -1,6 +1,6 @@
 package com.nd.inventoryservice.inventory.messaging.consumer;
 
-import com.nd.inventoryservice.inventory.application.InventoryReservationService;
+import com.nd.inventoryservice.inventory.application.InventoryReservationHandler;
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.mapper.ReservationItemMapper;
 import com.nd.inventoryservice.inventory.messaging.event.InventoryReservationRequestedEvent;
@@ -17,7 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 public class InventoryReservationRequestedConsumer {
 
     private final ObjectMapper objectMapper;
-    private final InventoryReservationService reservationService;
+    private final InventoryReservationHandler reservationHandler;
     private final ReservationItemMapper itemMapper;
 
     @KafkaListener(
@@ -28,6 +28,6 @@ public class InventoryReservationRequestedConsumer {
         var items = itemMapper.toReservationItems(event.items());
         var command = new ReserveInventoryCommand(event.orderId(), items);
 
-        reservationService.reserve(command);
+        reservationHandler.handle(command);
     }
 }

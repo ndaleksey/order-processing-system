@@ -26,7 +26,7 @@ public class InventoryReservationService {
         command.items().forEach(item ->
                 reserve(item.productId(), item.quantity()));
 
-        var event = eventFactory.createInventoryReserved(command.orderId());
+        var event = eventFactory.createInventoryReservationSucceeded(command.orderId());
 
         eventRepository.save(event);
     }

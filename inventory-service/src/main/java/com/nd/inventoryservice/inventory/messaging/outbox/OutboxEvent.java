@@ -53,13 +53,29 @@ public class OutboxEvent {
         return create(eventId, orderId, occurredAt, payload);
     }
 
-    private static OutboxEvent create(UUID eventId,
-                                      UUID orderId,
-                                      Instant occurredAt,
-                                      String payload) {
+    private static OutboxEvent create(
+            UUID eventId,
+            UUID orderId,
+            Instant occurredAt,
+            String payload) {
         var event = new OutboxEvent();
         event.id = eventId;
         event.type = OutboxEventType.INVENTORY_RESERVED;
+        event.aggregateId = orderId;
+        event.createdAt = occurredAt;
+        event.payload = payload;
+
+        return event;
+    }
+
+    public static OutboxEvent failedReservation(
+            UUID eventId,
+            UUID orderId,
+            Instant occurredAt,
+            String payload) {
+        var event = new OutboxEvent();
+        event.id = eventId;
+        event.type = OutboxEventType.INVENTORY_RESERVATION_FAILED;
         event.aggregateId = orderId;
         event.createdAt = occurredAt;
         event.payload = payload;

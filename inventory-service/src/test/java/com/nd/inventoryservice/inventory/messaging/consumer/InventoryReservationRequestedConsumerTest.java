@@ -1,6 +1,6 @@
 package com.nd.inventoryservice.inventory.messaging.consumer;
 
-import com.nd.inventoryservice.inventory.application.InventoryReservationService;
+import com.nd.inventoryservice.inventory.application.InventoryReservationHandler;
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.mapper.ReservationItemMapper;
 import com.nd.inventoryservice.inventory.messaging.event.ReservationItem;
@@ -31,7 +31,7 @@ class InventoryReservationRequestedConsumerTest {
     private ArgumentCaptor<ReserveInventoryCommand> commandCaptor;
 
     @Mock
-    private InventoryReservationService reservationService;
+    private InventoryReservationHandler reservationHandler;
 
     @Mock
     private ReservationItemMapper itemMapper;
@@ -42,7 +42,7 @@ class InventoryReservationRequestedConsumerTest {
 
     @BeforeEach
     void setUp() {
-        consumer = new InventoryReservationRequestedConsumer(objectMapper, reservationService, itemMapper);
+        consumer = new InventoryReservationRequestedConsumer(objectMapper, reservationHandler, itemMapper);
     }
 
     @Test
@@ -72,7 +72,7 @@ class InventoryReservationRequestedConsumerTest {
 
         consumer.consume(payload);
 
-        verify(reservationService).reserve(commandCaptor.capture());
+        verify(reservationHandler).handle(commandCaptor.capture());
 
         assertEquals(orderId, commandCaptor.getValue().orderId());
     }

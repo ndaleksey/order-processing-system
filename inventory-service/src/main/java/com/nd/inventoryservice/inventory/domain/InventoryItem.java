@@ -45,7 +45,7 @@ public class InventoryItem {
         Objects.requireNonNull(productId, "Product id cannot be null");
 
         if (availableQuantity < 0) {
-            throw new IllegalArgumentException("Available quantity cannot be less than zero");
+            throw new InventoryReservationException("Available quantity cannot be less than zero");
         }
 
         return new InventoryItem(productId, availableQuantity);
@@ -53,11 +53,11 @@ public class InventoryItem {
 
     public void reserve(int quantity) {
         if (quantity <= 0) {
-            throw new IllegalArgumentException("Quantity cannot be less or equal zero");
+            throw new InventoryReservationException("Quantity cannot be less or equal zero");
         }
 
         if (quantity > availableQuantity) {
-            throw new IllegalArgumentException("Available quantity is less than required quantity");
+            throw new InventoryReservationException("Available quantity is less than required quantity");
         }
 
         availableQuantity -= quantity;
