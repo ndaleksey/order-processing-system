@@ -6,6 +6,7 @@ stages:
 include:
   - local: 'order-service/.gitlab-ci.yml'
   - local: 'payment-service/.gitlab-ci.yml'
+  - local: 'inventory-service/.gitlab-ci.yml'
 
 test:
   stage: test
