@@ -26,7 +26,7 @@ public class InventoryReservationRequestedConsumer {
     public void consume(String payload) {
         var event = objectMapper.readValue(payload, InventoryReservationRequestedEvent.class);
         var items = itemMapper.toReservationItems(event.items());
-        var command = new ReserveInventoryCommand(event.orderId(), items);
+        var command = new ReserveInventoryCommand(event.eventId(), event.orderId(), items);
 
         reservationHandler.handle(command);
     }

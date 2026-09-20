@@ -39,6 +39,8 @@ class InventoryReservationServiceIntegrationTest {
     void shouldReserveInventoryAndCreateOutboxEvent() {
 
         //GIVEN
+        var eventId = UUID.randomUUID();
+
         var productAId = UUID.randomUUID();
         var productBId = UUID.randomUUID();
 
@@ -52,7 +54,7 @@ class InventoryReservationServiceIntegrationTest {
         var reservationAItem = new ReservationItem(productAId, 3);
         var reservationBItem = new ReservationItem(productBId, 5);
 
-        var command = new ReserveInventoryCommand(orderId, List.of(reservationAItem, reservationBItem));
+        var command = new ReserveInventoryCommand(eventId, orderId, List.of(reservationAItem, reservationBItem));
 
         // WHEN
         service.reserve(command);
@@ -81,6 +83,8 @@ class InventoryReservationServiceIntegrationTest {
     void shouldRollbackAllReservationsWhenAnyItemCannotBeReserved() {
 
         // GIVEN
+        var eventId = UUID.randomUUID();
+
         var orderId = UUID.randomUUID();
 
         var productAId = UUID.randomUUID();
@@ -92,7 +96,7 @@ class InventoryReservationServiceIntegrationTest {
         var itemA = new ReservationItem(productAId, 3);
         var itemB = new ReservationItem(productBId, 5);
 
-        var command = new ReserveInventoryCommand(orderId, List.of(itemA, itemB));
+        var command = new ReserveInventoryCommand(eventId, orderId, List.of(itemA, itemB));
 
         // WHEN / THEN
         assertThrows(InventoryReservationException.class, () -> service.reserve(command));

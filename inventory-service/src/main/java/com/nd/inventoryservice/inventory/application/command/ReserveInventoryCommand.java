@@ -9,6 +9,7 @@ import java.util.UUID;
  * @since 2026
  */
 public record ReserveInventoryCommand(
+        UUID eventId,
         UUID orderId,
         List<ReservationItem> items
 ) {
