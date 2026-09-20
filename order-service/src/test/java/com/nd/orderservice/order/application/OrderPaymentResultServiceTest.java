@@ -1,11 +1,16 @@
 package com.nd.orderservice.order.application;
 
-import com.nd.orderservice.order.application.event.PaymentFailedEvent;
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.application.exception.OrderNotFoundException;
+import com.nd.orderservice.order.messaging.event.PaymentCompensatedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.domain.Order;
 import com.nd.orderservice.order.domain.OrderStatus;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEventRepository;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEvent;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
 import com.nd.orderservice.order.persistence.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +26,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -33,7 +39,7 @@ import static org.mockito.Mockito.when;
 class OrderPaymentResultServiceTest {
 
     @Captor
-    ArgumentCaptor<ProcessedEvent> captor;
+    private ArgumentCaptor<ProcessedEvent> captorProcessedEvent;
 
     @Mock
     private ProcessedEventRepository processedEventRepository;
@@ -41,27 +47,40 @@ class OrderPaymentResultServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private OutboxEventRepository outboxEventRepository;
+
+    @Mock
+    private OutboxEventFactory outboxEventFactory;
+
     @InjectMocks
     private OrderPaymentResultService orderPaymentResultService;
 
     @Test
-    void shouldConfirmOrderWhenPaymentSucceeded() {
+    void shouldMarkOrderPaidWhenPaymentSucceeded() {
         var eventId = UUID.randomUUID();
         var orderId = UUID.randomUUID();
         var paymentId = UUID.randomUUID();
         var event = PaymentSucceededEvent.create(eventId, orderId, paymentId, Instant.now());
         var order = Order.create(UUID.randomUUID());
 
+        var outboxEvent = mock(OutboxEvent.class);
+
         when(processedEventRepository.existsById(event.eventId())).thenReturn(false);
         when(orderRepository.findById(event.orderId())).thenReturn(Optional.of(order));
+        when(outboxEventFactory.createInventoryReservationRequested(order))
+                .thenReturn(outboxEvent);
 
         orderPaymentResultService.handlePaymentSucceededEvent(event);
 
-        assertEquals(OrderStatus.CONFIRMED, order.getStatus());
+        assertEquals(OrderStatus.PAID, order.getStatus());
 
-        verify(processedEventRepository).save(captor.capture());
+        verify(processedEventRepository).save(captorProcessedEvent.capture());
 
-        assertEquals(eventId, captor.getValue().getEventId());
+        assertEquals(eventId, captorProcessedEvent.getValue().getEventId());
+
+        verify(outboxEventFactory).createInventoryReservationRequested(order);
+        verify(outboxEventRepository).save(outboxEvent);
     }
 
     @Test
@@ -79,9 +98,9 @@ class OrderPaymentResultServiceTest {
 
         assertEquals(OrderStatus.CANCELED, order.getStatus());
 
-        verify(processedEventRepository).save(captor.capture());
+        verify(processedEventRepository).save(captorProcessedEvent.capture());
 
-        assertEquals(eventId, captor.getValue().getEventId());
+        assertEquals(eventId, captorProcessedEvent.getValue().getEventId());
     }
 
     @Test
@@ -124,8 +143,57 @@ class OrderPaymentResultServiceTest {
         when(processedEventRepository.existsById(event.eventId())).thenReturn(false);
         when(orderRepository.findById(event.orderId())).thenReturn(Optional.empty());
 
-        assertThrows(IllegalStateException.class, () -> orderPaymentResultService.handlePaymentSucceededEvent(event));
+        assertThrows(OrderNotFoundException.class, () -> orderPaymentResultService.handlePaymentSucceededEvent(event));
 
         verify(processedEventRepository, never()).save(any(ProcessedEvent.class));
+    }
+
+    @Test
+    void shouldCancelPaidOrderWhenPaymentCompensated() {
+        var eventId = UUID.randomUUID();
+        var orderId = UUID.randomUUID();
+        var order = Order.create(UUID.randomUUID());
+
+        order.markPaid();
+
+        var event = PaymentCompensatedEvent.create(
+                eventId,
+                orderId,
+                UUID.randomUUID(),
+                Instant.now()
+        );
+
+        when(processedEventRepository.existsById(eventId))
+                .thenReturn(false);
+
+        when(orderRepository.findById(orderId))
+                .thenReturn(Optional.of(order));
+
+        orderPaymentResultService.handlePaymentCompensatedEvent(event);
+
+        assertEquals(OrderStatus.CANCELED, order.getStatus());
+
+        verify(processedEventRepository).save(captorProcessedEvent.capture());
+        assertEquals(eventId, captorProcessedEvent.getValue().getEventId());
+    }
+
+    @Test
+    void shouldIgnoreAlreadyProcessedPaymentCompensatedEvent() {
+        var eventId = UUID.randomUUID();
+        var orderId = UUID.randomUUID();
+
+        var event = PaymentCompensatedEvent.create(
+                eventId,
+                orderId,
+                UUID.randomUUID(),
+                Instant.now()
+        );
+
+        when(processedEventRepository.existsById(eventId)).thenReturn(true);
+
+        orderPaymentResultService.handlePaymentCompensatedEvent(event);
+
+        verifyNoInteractions(orderRepository);
+        verify(processedEventRepository, never()).save(any());
     }
 }

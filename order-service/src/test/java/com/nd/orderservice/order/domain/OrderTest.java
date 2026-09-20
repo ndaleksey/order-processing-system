@@ -14,15 +14,24 @@ class OrderTest {
 
 
     @Test
-    void shouldMarkConfirmedWhenStatusIsCreated() {
+    void shouldMarkConfirmedWhenStatusIsPaid() {
         // Given
         var order = Order.create(UUID.randomUUID());
+        order.markPaid();
 
         // When
         order.markConfirmed();
 
         // Then
         assertEquals(OrderStatus.CONFIRMED, order.getStatus());
+    }
+
+    @Test
+    void shouldRejectConfirmationWhenStatusIsCreated() {
+        var order = Order.create(UUID.randomUUID());
+
+        assertThrows(IllegalStateException.class, order::markConfirmed);
+        assertEquals(OrderStatus.CREATED, order.getStatus());
     }
 
     @Test
@@ -38,9 +47,21 @@ class OrderTest {
     }
 
     @Test
+    void shouldMarkCanceledWhenStatusIsPaid() {
+        var order = Order.create(UUID.randomUUID());
+        order.markPaid();
+
+        order.markCanceled();
+
+        assertEquals(OrderStatus.CANCELED, order.getStatus());
+    }
+
+    @Test
     void shouldThrowExceptionWhenCancelConfirmedOrder() {
         // Given
         var order = Order.create(UUID.randomUUID());
+
+        order.markPaid();
 
         order.markConfirmed();
 

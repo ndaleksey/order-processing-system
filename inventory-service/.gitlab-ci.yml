@@ -1,0 +1,23 @@
+variables:
+  INVENTORY_SERVICE_NAME: inventory-service
+  INVENTORY_SERVICE_IMAGE: "localhost:5000/inventory-service"
+
+build-inventory-service:
+  stage: build
+  script:
+    - |
+      docker build \
+        -f inventory-service/Dockerfile \
+        -t "${INVENTORY_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}" \
+        .
+    - docker push "${INVENTORY_SERVICE_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+
+deploy-inventory-service:
+  stage: deploy
+  script:
+    - |
+      helm upgrade --install ${INVENTORY_SERVICE_NAME} ./helm/${INVENTORY_SERVICE_NAME} \
+        --set image.tag="${CI_COMMIT_SHORT_SHA}" \
+        --wait \
+        --rollback-on-failure \
+        --timeout 2m

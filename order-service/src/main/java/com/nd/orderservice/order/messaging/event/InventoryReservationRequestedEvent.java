@@ -1,0 +1,16 @@
+package com.nd.orderservice.order.messaging.event;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * @since 2026
+ */
+public record InventoryReservationRequestedEvent(
+        UUID eventId,
+        UUID orderId,
+        List<ReservationItem> items,
+        Instant occurredAt
+) {
+}

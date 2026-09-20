@@ -1,6 +1,6 @@
 package com.nd.orderservice.order.infrastructure.outbox;
 
-import com.nd.orderservice.order.infrastructure.kafka.OrderEventProducer;
+import com.nd.orderservice.order.infrastructure.kafka.KafkaEventProducer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -42,7 +42,7 @@ class OutboxPublisherIntegrationTest {
     private tools.jackson.databind.ObjectMapper objectMapper;
 
     @MockitoBean
-    private OrderEventProducer orderEventProducer;
+    private KafkaEventProducer kafkaEventProducer;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -85,7 +85,7 @@ class OutboxPublisherIntegrationTest {
         when(metadata.partition()).thenReturn(0);
         when(metadata.offset()).thenReturn(10L);
 
-        when(orderEventProducer.send(eq(orderId), anyString()))
+        when(kafkaEventProducer.send(eq("orders"), eq(orderId), anyString()))
                 .thenReturn(CompletableFuture.completedFuture(sendResult));
 
         outboxPublisher.publishPendingEvents();
@@ -104,8 +104,8 @@ class OutboxPublisherIntegrationTest {
                 objectMapper.readTree(persistedEvent.getPayload())
         );
 
-        verify(orderEventProducer)
-                .send(eq(orderId), anyString());
+        verify(kafkaEventProducer)
+                .send(eq("orders"), eq(orderId), anyString());
 
         var pendingEvents = outboxEventRepository
                 .findTop10ByPublishedAtIsNullOrderByCreatedAtAsc();
@@ -141,7 +141,7 @@ class OutboxPublisherIntegrationTest {
         var event = OutboxEvent.orderCreated(eventId, orderId, occurredAt, payload);
         var savedEvent = outboxEventRepository.saveAndFlush(event);
 
-        when(orderEventProducer.send(eq(orderId), anyString()))
+        when(kafkaEventProducer.send(eq("orders"), eq(orderId), anyString()))
                 .thenReturn(CompletableFuture.failedFuture(
                         new RuntimeException("Kafka unavailable")));
 
@@ -156,8 +156,8 @@ class OutboxPublisherIntegrationTest {
 
         assertNull(persistedEvent.getPublishedAt());
 
-        verify(orderEventProducer)
-                .send(eq(orderId), anyString());
+        verify(kafkaEventProducer)
+                .send(eq("orders"), eq(orderId), anyString());
 
         var pendingEvents = outboxEventRepository
                 .findTop10ByPublishedAtIsNullOrderByCreatedAtAsc();

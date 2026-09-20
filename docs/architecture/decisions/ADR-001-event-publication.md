@@ -157,7 +157,7 @@ Kafka гарантирует порядок только внутри конкр
 
 ## Компоненты решения
 
-### `OrderEventProducer`
+### `KafkaEventProducer`
 
 Отвечает только за работу с Kafka:
 

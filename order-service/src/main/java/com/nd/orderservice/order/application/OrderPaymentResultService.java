@@ -1,9 +1,13 @@
 package com.nd.orderservice.order.application;
 
-import com.nd.orderservice.order.application.event.PaymentFailedEvent;
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.application.exception.OrderNotFoundException;
+import com.nd.orderservice.order.messaging.event.PaymentCompensatedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEventRepository;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventFactory;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
 import com.nd.orderservice.order.persistence.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class OrderPaymentResultService {
+
     private final ProcessedEventRepository processedEventRepository;
     private final OrderRepository orderRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final OutboxEventFactory outboxEventFactory;
 
     @Transactional
     public void handlePaymentSucceededEvent(PaymentSucceededEvent event) {
@@ -29,9 +36,12 @@ public class OrderPaymentResultService {
         }
 
         var order = orderRepository.findById(event.orderId())
-                .orElseThrow(() -> new IllegalStateException("Order not found: " + event.orderId()));
+                .orElseThrow(() -> new OrderNotFoundException(("Order not found: " + event.orderId())));
 
-        order.markConfirmed();
+        order.markPaid();
+
+        var outboxEvent = outboxEventFactory.createInventoryReservationRequested(order);
+        outboxEventRepository.save(outboxEvent);
 
         processedEventRepository.save(ProcessedEvent.create(event.eventId()));
     }
@@ -45,7 +55,23 @@ public class OrderPaymentResultService {
         }
 
         var order = orderRepository.findById(event.orderId())
-                .orElseThrow(() -> new IllegalStateException("Order not found: " + event.orderId()));
+                .orElseThrow(() -> new OrderNotFoundException(("Order not found: " + event.orderId())));
+
+        order.markCanceled();
+
+        processedEventRepository.save(ProcessedEvent.create(event.eventId()));
+    }
+
+    @Transactional
+    public void handlePaymentCompensatedEvent(PaymentCompensatedEvent event) {
+        if (processedEventRepository.existsById(event.eventId())) {
+            log.info("PaymentCompensatedEvent event already processed: eventId={}", event.eventId());
+
+            return;
+        }
+
+        var order = orderRepository.findById(event.orderId())
+                .orElseThrow(() -> new OrderNotFoundException(("Order not found: " + event.orderId())));
 
         order.markCanceled();
 

@@ -13,11 +13,10 @@ import java.util.concurrent.CompletableFuture;
  */
 @RequiredArgsConstructor
 @Component
-public class OrderEventProducer {
+public class KafkaEventProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaTopicsProperties topicsProperties;
 
-    public CompletableFuture<SendResult<String, String>> send(UUID aggregateId, String payload) {
-        return kafkaTemplate.send(topicsProperties.orders(), aggregateId.toString(), payload);
+    public CompletableFuture<SendResult<String, String>> send(String topic, UUID aggregateId, String payload) {
+        return kafkaTemplate.send(topic, aggregateId.toString(), payload);
     }
 }

@@ -1,12 +1,11 @@
 package com.nd.orderservice.order.infrastructure.kafka;
 
 import com.nd.orderservice.order.application.OrderPaymentResultService;
-import com.nd.orderservice.order.application.event.PaymentFailedEvent;
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.ObjectMapper;

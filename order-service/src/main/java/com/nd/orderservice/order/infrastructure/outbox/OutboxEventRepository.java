@@ -12,4 +12,6 @@ import java.util.UUID;
 @Repository
 public interface OutboxEventRepository extends JpaRepository<OutboxEvent, UUID> {
     List<OutboxEvent> findTop10ByPublishedAtIsNullOrderByCreatedAtAsc();
+
+    boolean existsByAggregateIdAndTypeIs(UUID aggregateId, OutboxEventType type);
 }

@@ -74,7 +74,7 @@ app:
 
 ---
 
-### `OrderEventProducer`
+### `KafkaEventProducer`
 
 Путь:
 
@@ -116,7 +116,7 @@ order-service/src/main/java/com/nd/orderservice/order/infrastructure/outbox/Outb
 
 * выбрать до 10 неопубликованных outbox-событий;
 * обрабатывать их в порядке `createdAt`;
-* передать каждое событие в `OrderEventProducer`;
+* передать каждое событие в `KafkaEventProducer`;
 * дождаться результата отправки через `CompletableFuture.join()`;
 * установить `publishedAt` только после успешного подтверждения Kafka;
 * оставить событие неопубликованным при ошибке.
@@ -302,7 +302,7 @@ orderEventProducer.send(...).join();
 
 ## Реализованные тесты
 
-### Unit test `OrderEventProducer`
+### Unit test `KafkaEventProducer`
 
 Проверяет:
 
@@ -339,7 +339,7 @@ failed CompletableFuture
 
 * сохранение реального `OutboxEvent` в PostgreSQL;
 * запуск настоящего `OutboxPublisher`;
-* mock только для `OrderEventProducer`;
+* mock только для `KafkaEventProducer`;
 * сохранение `publishedAt` через dirty checking;
 * отсутствие события в запросе pending-событий.
 
@@ -478,7 +478,7 @@ FOR UPDATE SKIP LOCKED
 * [x] Название topic вынесено в конфигурацию.
 * [x] `aggregateId` используется как message key.
 * [x] Payload публикуется без повторной сериализации.
-* [x] Реализован `OrderEventProducer`.
+* [x] Реализован `KafkaEventProducer`.
 * [x] Реализован `OutboxPublisher`.
 * [x] Publisher выбирает ограниченную пачку pending-событий.
 * [x] Publisher ожидает результат Kafka send.

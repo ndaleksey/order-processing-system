@@ -1,4 +1,4 @@
-package com.nd.orderservice.order.application.event;
+package com.nd.orderservice.order.messaging.event;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,8 +21,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
                 value = PaymentFailedEvent.class,
                 name = "PAYMENT_FAILED"
         ),
+        @JsonSubTypes.Type(
+                value = PaymentCompensatedEvent.class,
+                name = "PAYMENT_COMPENSATED"
+        )
 })
-public sealed interface PaymentEvent permits PaymentSucceededEvent, PaymentFailedEvent {
+public sealed interface PaymentEvent permits PaymentSucceededEvent, PaymentFailedEvent, PaymentCompensatedEvent {
     @SuppressWarnings("unused")
     EventType eventType();
 }

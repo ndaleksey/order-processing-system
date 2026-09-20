@@ -20,4 +20,9 @@ public class FakePaymentProvider implements PaymentProvider {
 
         return PaymentResult.success();
     }
+
+    @Override
+    public PaymentResult refund(UUID orderId, BigDecimal amount) {
+        return PaymentResult.success();
+    }
 }

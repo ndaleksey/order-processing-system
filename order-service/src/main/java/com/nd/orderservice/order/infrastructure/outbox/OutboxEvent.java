@@ -21,7 +21,9 @@ public class OutboxEvent {
     @Id
     private UUID id;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OutboxEventType type;
 
     @Column(name = "aggregated_id", nullable = false)
     private UUID aggregateId;
@@ -43,7 +45,39 @@ public class OutboxEvent {
             String payload) {
         var event = new OutboxEvent();
         event.id = eventId;
-        event.type = "ORDER_CREATED";
+        event.type = OutboxEventType.ORDER_CREATED;
+        event.aggregateId = orderId;
+        event.createdAt = createdAt;
+        event.payload = payload;
+
+        return event;
+    }
+
+    public static OutboxEvent inventoryReservationRequested(
+            UUID eventId,
+            UUID orderId,
+            Instant createdAt,
+            String payload
+    ) {
+        var event = new OutboxEvent();
+        event.id = eventId;
+        event.type = OutboxEventType.INVENTORY_RESERVATION_REQUESTED;
+        event.aggregateId = orderId;
+        event.createdAt = createdAt;
+        event.payload = payload;
+
+        return event;
+    }
+
+    public static OutboxEvent paymentCompensationRequested(
+            UUID eventId,
+            UUID orderId,
+            Instant createdAt,
+            String payload
+    ) {
+        var event = new OutboxEvent();
+        event.id = eventId;
+        event.type = OutboxEventType.PAYMENT_COMPENSATION_REQUESTED;
         event.aggregateId = orderId;
         event.createdAt = createdAt;
         event.payload = payload;

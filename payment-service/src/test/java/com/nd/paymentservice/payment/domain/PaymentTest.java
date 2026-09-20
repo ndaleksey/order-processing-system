@@ -36,4 +36,23 @@ class PaymentTest {
         assertNotNull(payment.getCreatedAt());
         assertNotNull(payment.getUpdatedAt());
     }
+
+    @Test
+    void shouldCompensateSucceededPayment() {
+        var payment = Payment.create(UUID.randomUUID(), BigDecimal.valueOf(100L));
+        payment.succeed();
+
+        payment.compensate();
+
+        assertEquals(PaymentStatus.COMPENSATED, payment.getStatus());
+    }
+
+    @Test
+    void shouldRejectCompensationWhenPaymentIsNotSucceeded() {
+        var payment = Payment.create(UUID.randomUUID(), BigDecimal.valueOf(100L));
+
+        assertThrows(IllegalStateException.class, payment::compensate);
+
+        assertEquals(PaymentStatus.CREATED, payment.getStatus());
+    }
 }

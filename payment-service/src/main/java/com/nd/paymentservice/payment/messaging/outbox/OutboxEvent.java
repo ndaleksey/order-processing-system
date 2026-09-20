@@ -2,6 +2,8 @@ package com.nd.paymentservice.payment.messaging.outbox;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -24,7 +26,9 @@ public class OutboxEvent {
     @Id
     private UUID id;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OutboxEventType type;
 
     @Column(name = "aggregated_id", nullable = false)
     private UUID aggregatedId;
@@ -45,7 +49,7 @@ public class OutboxEvent {
             Instant createdAt,
             String payload
     ) {
-        return create(eventId, paymentId, createdAt, "PAYMENT_SUCCEEDED", payload);
+        return create(eventId, paymentId, createdAt, OutboxEventType.PAYMENT_SUCCEEDED, payload);
     }
 
     public static OutboxEvent createFailed(
@@ -53,7 +57,15 @@ public class OutboxEvent {
             UUID paymentId,
             Instant createdAt,
             String payload) {
-        return create(eventId, paymentId, createdAt, "PAYMENT_FAILED", payload);
+        return create(eventId, paymentId, createdAt, OutboxEventType.PAYMENT_FAILED, payload);
+    }
+
+    public static OutboxEvent createCompensated(
+            UUID eventId,
+            UUID paymentId,
+            Instant occurredAt,
+            String payload) {
+        return create(eventId, paymentId, occurredAt, OutboxEventType.PAYMENT_COMPENSATED, payload);
     }
 
     public void markPublished() {
@@ -63,7 +75,7 @@ public class OutboxEvent {
     private static OutboxEvent create(UUID eventId,
                                       UUID paymentId,
                                       Instant createdAt,
-                                      String type,
+                                      OutboxEventType type,
                                       String payload) {
         var event = new OutboxEvent();
         event.id = eventId;

@@ -6,4 +6,5 @@ package com.nd.paymentservice.payment.messaging.event;
 public enum EventType {
     PAYMENT_SUCCEEDED,
     PAYMENT_FAILED,
+    PAYMENT_COMPENSATED
 }

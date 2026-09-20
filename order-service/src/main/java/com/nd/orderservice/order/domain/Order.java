@@ -61,8 +61,8 @@ public class Order {
     }
 
     public void markConfirmed() {
-        if (status != OrderStatus.CREATED) {
-            throw new IllegalStateException("Only CREATED order can be confirmed");
+        if (status != OrderStatus.PAID) {
+            throw new IllegalStateException("Only PAID order can be confirmed");
 
         }
 
@@ -71,11 +71,20 @@ public class Order {
     }
 
     public void markCanceled() {
-        if (status != OrderStatus.CREATED) {
-            throw new IllegalStateException("Only CREATED order can be canceled");
+        if (status != OrderStatus.CREATED && status != OrderStatus.PAID) {
+            throw new IllegalStateException("Only CREATED or PAID order can be canceled");
         }
 
         this.status = OrderStatus.CANCELED;
+        this.updatedAt = Instant.now();
+    }
+
+    public void markPaid() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only CREATED order can be paid");
+        }
+
+        this.status = OrderStatus.PAID;
         this.updatedAt = Instant.now();
     }
 

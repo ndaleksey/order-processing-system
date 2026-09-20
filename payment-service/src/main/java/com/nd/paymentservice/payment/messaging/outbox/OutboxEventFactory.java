@@ -1,6 +1,7 @@
 package com.nd.paymentservice.payment.messaging.outbox;
 
 import com.nd.paymentservice.payment.domain.Payment;
+import com.nd.paymentservice.payment.messaging.event.PaymentCompensatedEvent;
 import com.nd.paymentservice.payment.messaging.event.PaymentFailedEvent;
 import com.nd.paymentservice.payment.messaging.event.PaymentSucceededEvent;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +53,24 @@ public class OutboxEventFactory {
                 payment.getId(),
                 occurredAt,
                 objectMapper.writeValueAsString(event));
+    }
+
+    public OutboxEvent createPaymentCompensatedEvent(Payment payment) {
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+
+        var event = PaymentCompensatedEvent.create(
+                eventId,
+                payment.getOrderId(),
+                payment.getId(),
+                occurredAt
+        );
+
+        return OutboxEvent.createCompensated(
+                event.eventId(),
+                payment.getId(),
+                occurredAt,
+                objectMapper.writeValueAsString(event)
+        );
     }
 }

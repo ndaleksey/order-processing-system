@@ -12,7 +12,7 @@ spring:
     hibernate:
       ddl-auto: update
 
-    show-sql: true
+    show-sql: false
 
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
@@ -51,4 +51,7 @@ app:
     topics:
       orders: orders
       payments: payments
+      payment-requests: payment-requests
+      inventory: inventory
+      inventory-results: inventory-results
 

@@ -1,6 +1,8 @@
 package com.nd.orderservice.order.application;
 
-import com.nd.orderservice.order.application.event.PaymentSucceededEvent;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventRepository;
+import com.nd.orderservice.order.infrastructure.outbox.OutboxEventType;
+import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.domain.Order;
 import com.nd.orderservice.order.domain.OrderStatus;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEventRepository;
@@ -32,6 +34,9 @@ class OrderPaymentResultServiceIntegrationTest {
     @Autowired
     private OrderPaymentResultService orderPaymentResultService;
 
+    @Autowired
+    private OutboxEventRepository outboxEventRepository;
+
 
     @Test
     void shouldConfirmOrderAndSaveProcessedEventWhenPaymentSucceeded() {
@@ -46,11 +51,13 @@ class OrderPaymentResultServiceIntegrationTest {
 
         savedOrder = orderRepository.findById(savedOrder.getId()).orElseThrow();
 
-        assertEquals(OrderStatus.CONFIRMED, savedOrder.getStatus());
+        assertEquals(OrderStatus.PAID, savedOrder.getStatus());
 
         var processedEvent = processedEventRepository.findById(eventId).orElseThrow();
 
         assertEquals(eventId, processedEvent.getEventId());
         assertNotNull(processedEvent.getProcessedAt());
+
+        assertTrue(outboxEventRepository.existsByAggregateIdAndTypeIs(order.getId(), OutboxEventType.INVENTORY_RESERVATION_REQUESTED));
     }
 }

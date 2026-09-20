@@ -8,4 +8,6 @@ import java.util.UUID;
  */
 public interface PaymentProvider {
     PaymentResult charge(UUID orderId, BigDecimal amount);
+
+    PaymentResult refund(UUID orderId, BigDecimal amount);
 }
