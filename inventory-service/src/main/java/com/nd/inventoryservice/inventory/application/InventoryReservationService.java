@@ -1,6 +1,7 @@
 package com.nd.inventoryservice.inventory.application;
 
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
+import com.nd.inventoryservice.inventory.domain.InventoryReservationException;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventFactory;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import com.nd.inventoryservice.inventory.persistence.InventoryItemRepository;
@@ -33,7 +34,7 @@ public class InventoryReservationService {
 
     private void reserve(UUID productId, int quantity) {
         var item = repository.findByProductId(productId)
-                .orElseThrow(() -> new IllegalStateException("Inventory item not found: " + productId));
+                .orElseThrow(() -> new InventoryReservationException("Inventory item not found: " + productId));
 
         item.reserve(quantity);
     }

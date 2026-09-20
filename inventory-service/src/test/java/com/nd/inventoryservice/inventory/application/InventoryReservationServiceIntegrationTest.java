@@ -3,6 +3,7 @@ package com.nd.inventoryservice.inventory.application;
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.model.ReservationItem;
 import com.nd.inventoryservice.inventory.domain.InventoryItem;
+import com.nd.inventoryservice.inventory.domain.InventoryReservationException;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventType;
 import com.nd.inventoryservice.inventory.persistence.InventoryItemRepository;
@@ -94,7 +95,7 @@ class InventoryReservationServiceIntegrationTest {
         var command = new ReserveInventoryCommand(orderId, List.of(itemA, itemB));
 
         // WHEN / THEN
-        assertThrows(IllegalArgumentException.class, () -> service.reserve(command));
+        assertThrows(InventoryReservationException.class, () -> service.reserve(command));
 
         // THEN
         var productA = repository.findByProductId(productAId).orElseThrow();

@@ -3,6 +3,7 @@ package com.nd.inventoryservice.inventory.application;
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.model.ReservationItem;
 import com.nd.inventoryservice.inventory.domain.InventoryItem;
+import com.nd.inventoryservice.inventory.domain.InventoryReservationException;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEvent;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventFactory;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
@@ -80,7 +81,7 @@ class InventoryReservationServiceTest {
                 .thenReturn(Optional.empty());
 
         // WHEN / THEN
-        assertThrows(IllegalStateException.class, () -> service.reserve(command));
+        assertThrows(InventoryReservationException.class, () -> service.reserve(command));
 
         verify(eventRepository, never()).save(any());
     }

@@ -65,7 +65,7 @@ class InventoryItemTest {
     void shouldRejectNegativeInitialAvailableQuantity() {
         // GIVEN / WHEN / THEN
         var productId = UUID.randomUUID();
-        assertThrows(InventoryReservationException.class, () -> InventoryItem.create(productId, -10));
+        assertThrows(IllegalArgumentException.class, () -> InventoryItem.create(productId, -10));
     }
 
     @Test

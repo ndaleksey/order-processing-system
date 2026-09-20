@@ -2,6 +2,7 @@ package com.nd.inventoryservice.inventory.application;
 
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.domain.InventoryReservationException;
+import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEvent;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventFactory;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -53,9 +55,11 @@ class InventoryReservationHandlerTest {
 
         var exceptionMessage = "Available quantity is less than required quantity";
 
-        var event = outboxEventFactory.createInventoryReservationFailed(
+        var event = OutboxEvent.failedReservation(
+                UUID.randomUUID(),
                 orderId,
-                exceptionMessage
+                Instant.now(),
+                "{}"
         );
 
         doThrow(new InventoryReservationException(exceptionMessage))
