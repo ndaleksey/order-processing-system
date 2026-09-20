@@ -9,6 +9,7 @@ import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import com.nd.inventoryservice.inventory.persistence.InventoryItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -25,7 +26,11 @@ public class InventoryReservationService {
     private final InventoryItemRepository repository;
     private final ProcessedEventRepository processedEventRepository;
 
-    @Transactional
+    /**
+     * Separate transaction is intentional:
+     * reservation rollback must not mark handler transaction as rollback-only.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void reserve(ReserveInventoryCommand command) {
         command.items().forEach(item ->
                 reserve(item.productId(), item.quantity()));

@@ -9,6 +9,7 @@ import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @since 2026
@@ -23,9 +24,10 @@ public class InventoryReservationHandler {
     private final OutboxEventRepository outboxEventRepository;
     private final ProcessedEventRepository processedEventRepository;
 
+    @Transactional
     public void handle(ReserveInventoryCommand command) {
         if (processedEventRepository.existsById(command.eventId())) {
-            log.info("ReserveInventory event already already proceeded: eventId = {}", command.eventId());
+            log.info("ReserveInventory event already proceeded: eventId = {}", command.eventId());
 
             return;
         }
