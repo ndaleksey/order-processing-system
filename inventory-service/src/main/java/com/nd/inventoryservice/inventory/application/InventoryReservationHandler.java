@@ -35,6 +35,13 @@ public class InventoryReservationHandler {
         try {
             reservationService.reserve(command);
         } catch (InventoryReservationException e) {
+            log.warn(
+                    "Inventory reservation failed: eventId={}, orderId={}, reason={}",
+                    command.eventId(),
+                    command.orderId(),
+                    e.getMessage()
+            );
+
             var outboxEvent = outboxEventFactory.createInventoryReservationFailed(command.orderId(), e.getMessage());
 
             outboxEventRepository.save(outboxEvent);
