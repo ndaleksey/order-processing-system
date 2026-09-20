@@ -17,6 +17,7 @@ public class KafkaTopicNameResolver {
         return switch (eventType) {
             case ORDER_CREATED -> topics.orders();
             case INVENTORY_RESERVATION_REQUESTED -> topics.inventory();
+            case PAYMENT_COMPENSATION_REQUESTED -> topics.payments();
         };
     }
 }

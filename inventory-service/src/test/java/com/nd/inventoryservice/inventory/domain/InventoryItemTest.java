@@ -1,5 +1,6 @@
 package com.nd.inventoryservice.inventory.domain;
 
+import com.nd.inventoryservice.inventory.application.exception.InventoryReservationException;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;

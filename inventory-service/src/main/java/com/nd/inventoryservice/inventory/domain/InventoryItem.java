@@ -1,5 +1,6 @@
 package com.nd.inventoryservice.inventory.domain;
 
+import com.nd.inventoryservice.inventory.application.exception.InventoryReservationException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -45,7 +46,7 @@ public class InventoryItem {
         Objects.requireNonNull(productId, "Product id cannot be null");
 
         if (availableQuantity < 0) {
-            throw new InventoryReservationException("Available quantity cannot be less than zero");
+            throw new IllegalArgumentException("Available quantity cannot be less than zero");
         }
 
         return new InventoryItem(productId, availableQuantity);

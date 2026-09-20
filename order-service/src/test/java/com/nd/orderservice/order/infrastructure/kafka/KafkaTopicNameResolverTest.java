@@ -14,7 +14,8 @@ class KafkaTopicNameResolverTest {
         var topics = new KafkaTopicsProperties(
                 "orders",
                 "payments",
-                "inventory"
+                "inventory",
+                "inventory-results"
         );
 
         var resolver = new KafkaTopicNameResolver(topics);

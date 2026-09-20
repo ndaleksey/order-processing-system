@@ -6,4 +6,6 @@ package com.nd.orderservice.order.messaging.event;
 public enum EventType {
     PAYMENT_SUCCEEDED,
     PAYMENT_FAILED,
+    RESERVATION_SUCCEEDED,
+    RESERVATION_FAILED
 }

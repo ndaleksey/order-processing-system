@@ -1,5 +1,6 @@
 package com.nd.orderservice.order.application;
 
+import com.nd.orderservice.order.application.exception.OrderNotFoundException;
 import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.domain.Order;
@@ -141,7 +142,7 @@ class OrderPaymentResultServiceTest {
         when(processedEventRepository.existsById(event.eventId())).thenReturn(false);
         when(orderRepository.findById(event.orderId())).thenReturn(Optional.empty());
 
-        assertThrows(IllegalStateException.class, () -> orderPaymentResultService.handlePaymentSucceededEvent(event));
+        assertThrows(OrderNotFoundException.class, () -> orderPaymentResultService.handlePaymentSucceededEvent(event));
 
         verify(processedEventRepository, never()).save(any(ProcessedEvent.class));
     }

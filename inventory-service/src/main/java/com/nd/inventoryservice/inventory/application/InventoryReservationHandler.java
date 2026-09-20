@@ -1,7 +1,7 @@
 package com.nd.inventoryservice.inventory.application;
 
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
-import com.nd.inventoryservice.inventory.domain.InventoryReservationException;
+import com.nd.inventoryservice.inventory.application.exception.InventoryReservationException;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventFactory;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;

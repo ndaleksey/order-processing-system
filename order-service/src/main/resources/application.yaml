@@ -52,4 +52,5 @@ app:
       orders: orders
       payments: payments
       inventory: inventory
+      inventory-results: inventory-results
 

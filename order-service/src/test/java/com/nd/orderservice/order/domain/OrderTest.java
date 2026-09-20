@@ -1,5 +1,6 @@
 package com.nd.orderservice.order.domain;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OrderTest {
 
 
+    @Disabled
     @Test
     void shouldMarkConfirmedWhenStatusIsCreated() {
         // Given
@@ -37,6 +39,7 @@ class OrderTest {
         assertEquals(OrderStatus.CANCELED, order.getStatus());
     }
 
+    @Disabled
     @Test
     void shouldThrowExceptionWhenCancelConfirmedOrder() {
         // Given

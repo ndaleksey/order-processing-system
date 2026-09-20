@@ -1,5 +1,6 @@
 package com.nd.orderservice.order.application;
 
+import com.nd.orderservice.order.application.exception.OrderNotFoundException;
 import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
@@ -34,7 +35,7 @@ public class OrderPaymentResultService {
         }
 
         var order = orderRepository.findById(event.orderId())
-                .orElseThrow(() -> new IllegalStateException("Order not found: " + event.orderId()));
+                .orElseThrow(() -> new OrderNotFoundException(("Order not found: " + event.orderId())));
 
         order.markPaid();
 
@@ -53,7 +54,7 @@ public class OrderPaymentResultService {
         }
 
         var order = orderRepository.findById(event.orderId())
-                .orElseThrow(() -> new IllegalStateException("Order not found: " + event.orderId()));
+                .orElseThrow(() -> new OrderNotFoundException(("Order not found: " + event.orderId())));
 
         order.markCanceled();
 

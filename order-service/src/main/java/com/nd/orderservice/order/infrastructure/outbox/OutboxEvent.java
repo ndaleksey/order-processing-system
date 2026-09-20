@@ -69,6 +69,22 @@ public class OutboxEvent {
         return event;
     }
 
+    public static OutboxEvent paymentCompensationRequested(
+            UUID eventId,
+            UUID orderId,
+            Instant createdAt,
+            String payload
+    ) {
+        var event = new OutboxEvent();
+        event.id = eventId;
+        event.type = OutboxEventType.PAYMENT_COMPENSATION_REQUESTED;
+        event.aggregateId = orderId;
+        event.createdAt = createdAt;
+        event.payload = payload;
+
+        return event;
+    }
+
     public void markPublished() {
         this.publishedAt = Instant.now();
     }

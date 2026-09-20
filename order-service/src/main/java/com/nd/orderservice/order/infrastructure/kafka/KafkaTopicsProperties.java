@@ -12,5 +12,6 @@ import org.springframework.validation.annotation.Validated;
 public record KafkaTopicsProperties(
         @NotBlank String orders,
         @NotBlank String payments,
-        @NotBlank String inventory) {
+        @NotBlank String inventory,
+        @NotBlank String inventoryResults) {
 }

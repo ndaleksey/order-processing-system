@@ -2,6 +2,7 @@ package com.nd.orderservice.order.infrastructure.outbox;
 
 import com.nd.orderservice.order.messaging.event.InventoryReservationRequestedEvent;
 import com.nd.orderservice.order.messaging.event.OrderCreatedEvent;
+import com.nd.orderservice.order.messaging.event.PaymentCompensationRequestedEvent;
 import com.nd.orderservice.order.messaging.event.mapper.ReservationItemMapper;
 import com.nd.orderservice.order.domain.Order;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,24 @@ public class OutboxEventFactory {
         var payload = objectMapper.writeValueAsString(event);
 
         return OutboxEvent.inventoryReservationRequested(
+                eventId,
+                order.getId(),
+                occurredAt,
+                payload
+        );
+    }
+
+    public OutboxEvent createPaymentCompensationRequested(Order order) {
+        var eventId = UUID.randomUUID();
+        var occurredAt = Instant.now();
+
+        var event = new PaymentCompensationRequestedEvent(
+                eventId,
+                order.getId(),
+                occurredAt);
+        var payload = objectMapper.writeValueAsString(event);
+
+        return OutboxEvent.paymentCompensationRequested(
                 eventId,
                 order.getId(),
                 occurredAt,

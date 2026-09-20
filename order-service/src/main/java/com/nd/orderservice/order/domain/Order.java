@@ -61,8 +61,8 @@ public class Order {
     }
 
     public void markConfirmed() {
-        if (status != OrderStatus.CREATED) {
-            throw new IllegalStateException("Only CREATED order can be confirmed");
+        if (status != OrderStatus.PAID) {
+            throw new IllegalStateException("Only PAID order can be confirmed");
 
         }
 
