@@ -21,8 +21,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
                 value = PaymentFailedEvent.class,
                 name = "PAYMENT_FAILED"
         ),
+        @JsonSubTypes.Type(
+                value = PaymentCompensatedEvent.class,
+                name = "PAYMENT_COMPENSATED"
+        )
 })
-public sealed interface PaymentEvent permits PaymentSucceededEvent, PaymentFailedEvent {
+public sealed interface PaymentEvent permits PaymentSucceededEvent, PaymentFailedEvent, PaymentCompensatedEvent {
     @SuppressWarnings("unused")
     EventType eventType();
 }

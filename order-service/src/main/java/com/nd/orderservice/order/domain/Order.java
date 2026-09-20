@@ -71,8 +71,8 @@ public class Order {
     }
 
     public void markCanceled() {
-        if (status != OrderStatus.CREATED) {
-            throw new IllegalStateException("Only CREATED order can be canceled");
+        if (status != OrderStatus.CREATED && status != OrderStatus.PAID) {
+            throw new IllegalStateException("Only CREATED or PAID order can be canceled");
         }
 
         this.status = OrderStatus.CANCELED;

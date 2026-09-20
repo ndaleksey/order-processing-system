@@ -47,6 +47,16 @@ class OrderTest {
     }
 
     @Test
+    void shouldMarkCanceledWhenStatusIsPaid() {
+        var order = Order.create(UUID.randomUUID());
+        order.markPaid();
+
+        order.markCanceled();
+
+        assertEquals(OrderStatus.CANCELED, order.getStatus());
+    }
+
+    @Test
     void shouldThrowExceptionWhenCancelConfirmedOrder() {
         // Given
         var order = Order.create(UUID.randomUUID());

@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.infrastructure.kafka;
 
 import com.nd.orderservice.order.application.OrderPaymentResultService;
+import com.nd.orderservice.order.messaging.event.PaymentCompensatedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentEvent;
 import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
@@ -29,6 +30,7 @@ public class PaymentResultConsumer {
         switch (event) {
             case PaymentSucceededEvent e -> orderPaymentResultService.handlePaymentSucceededEvent(e);
             case PaymentFailedEvent e -> orderPaymentResultService.handlePaymentFailedEvent(e);
+            case PaymentCompensatedEvent e -> orderPaymentResultService.handlePaymentCompensatedEvent(e);
         }
     }
 }

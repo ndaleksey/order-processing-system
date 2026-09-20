@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-class PaymentCompensationServiceRollbackIntegrationTest {
+class PaymentCompensationServiceIntegrationTest {
 
     @Autowired
     private PaymentCompensationService compensationService;

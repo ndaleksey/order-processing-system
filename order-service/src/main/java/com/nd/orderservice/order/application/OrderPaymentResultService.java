@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.application;
 
 import com.nd.orderservice.order.application.exception.OrderNotFoundException;
+import com.nd.orderservice.order.messaging.event.PaymentCompensatedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.infrastructure.idempotency.ProcessedEvent;
@@ -49,6 +50,22 @@ public class OrderPaymentResultService {
     public void handlePaymentFailedEvent(PaymentFailedEvent event) {
         if (processedEventRepository.existsById(event.eventId())) {
             log.info("PaymentFailedEvent event already processed: eventId={}", event.eventId());
+
+            return;
+        }
+
+        var order = orderRepository.findById(event.orderId())
+                .orElseThrow(() -> new OrderNotFoundException(("Order not found: " + event.orderId())));
+
+        order.markCanceled();
+
+        processedEventRepository.save(ProcessedEvent.create(event.eventId()));
+    }
+
+    @Transactional
+    public void handlePaymentCompensatedEvent(PaymentCompensatedEvent event) {
+        if (processedEventRepository.existsById(event.eventId())) {
+            log.info("PaymentCompensatedEvent event already processed: eventId={}", event.eventId());
 
             return;
         }

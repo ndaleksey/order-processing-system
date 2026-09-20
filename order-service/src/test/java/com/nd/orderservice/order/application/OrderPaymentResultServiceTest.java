@@ -1,6 +1,7 @@
 package com.nd.orderservice.order.application;
 
 import com.nd.orderservice.order.application.exception.OrderNotFoundException;
+import com.nd.orderservice.order.messaging.event.PaymentCompensatedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentFailedEvent;
 import com.nd.orderservice.order.messaging.event.PaymentSucceededEvent;
 import com.nd.orderservice.order.domain.Order;
@@ -38,7 +39,7 @@ import static org.mockito.Mockito.when;
 class OrderPaymentResultServiceTest {
 
     @Captor
-    ArgumentCaptor<ProcessedEvent> captorProcessedEvent;
+    private ArgumentCaptor<ProcessedEvent> captorProcessedEvent;
 
     @Mock
     private ProcessedEventRepository processedEventRepository;
@@ -145,5 +146,54 @@ class OrderPaymentResultServiceTest {
         assertThrows(OrderNotFoundException.class, () -> orderPaymentResultService.handlePaymentSucceededEvent(event));
 
         verify(processedEventRepository, never()).save(any(ProcessedEvent.class));
+    }
+
+    @Test
+    void shouldCancelPaidOrderWhenPaymentCompensated() {
+        var eventId = UUID.randomUUID();
+        var orderId = UUID.randomUUID();
+        var order = Order.create(UUID.randomUUID());
+
+        order.markPaid();
+
+        var event = PaymentCompensatedEvent.create(
+                eventId,
+                orderId,
+                UUID.randomUUID(),
+                Instant.now()
+        );
+
+        when(processedEventRepository.existsById(eventId))
+                .thenReturn(false);
+
+        when(orderRepository.findById(orderId))
+                .thenReturn(Optional.of(order));
+
+        orderPaymentResultService.handlePaymentCompensatedEvent(event);
+
+        assertEquals(OrderStatus.CANCELED, order.getStatus());
+
+        verify(processedEventRepository).save(captorProcessedEvent.capture());
+        assertEquals(eventId, captorProcessedEvent.getValue().getEventId());
+    }
+
+    @Test
+    void shouldIgnoreAlreadyProcessedPaymentCompensatedEvent() {
+        var eventId = UUID.randomUUID();
+        var orderId = UUID.randomUUID();
+
+        var event = PaymentCompensatedEvent.create(
+                eventId,
+                orderId,
+                UUID.randomUUID(),
+                Instant.now()
+        );
+
+        when(processedEventRepository.existsById(eventId)).thenReturn(true);
+
+        orderPaymentResultService.handlePaymentCompensatedEvent(event);
+
+        verifyNoInteractions(orderRepository);
+        verify(processedEventRepository, never()).save(any());
     }
 }
