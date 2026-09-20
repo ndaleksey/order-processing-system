@@ -22,7 +22,7 @@ class OrderFlowIT {
 
     @BeforeAll
     static void setUp() {
-        RestAssured.baseURI = System.getProperty("e2e.base-url", "http://localhost:8080");
+        RestAssured.baseURI = System.getProperty("e2e.base-url", "http://localhost:18080");
     }
 
     @Test
