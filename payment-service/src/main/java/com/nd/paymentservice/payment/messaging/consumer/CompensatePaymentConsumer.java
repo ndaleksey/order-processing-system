@@ -24,7 +24,7 @@ public class CompensatePaymentConsumer {
             groupId = "${spring.kafka.consumer.group-id}"
     )
     public void compensate(String payload) {
-        var event = objectMapper.convertValue(payload, PaymentCompensationRequestedEvent.class);
+        var event = objectMapper.readValue(payload, PaymentCompensationRequestedEvent.class);
         var command = mapper.toCommand(event);
 
         compensationService.compensate(command);

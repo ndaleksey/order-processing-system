@@ -37,6 +37,7 @@ public class PaymentCompensationService {
         var payment = paymentRepository.findByOrderId(command.orderId())
                 .orElseThrow(()-> new PaymentNotFoundException("Payment not found"));
 
+        payment.compensate();
 
         var result = paymentProvider.refund(command.orderId(), payment.getAmount());
 
@@ -44,11 +45,9 @@ public class PaymentCompensationService {
             throw new RuntimeException("Payment refund failed");
         }
 
-        payment.compensate();
-
         var event = outboxEventFactory.createPaymentCompensatedEvent(payment);
         outboxEventRepository.save(event);
 
-        processedEventRepository.save(ProcessedEvent.create(event.getId()));
+        processedEventRepository.save(ProcessedEvent.create(command.eventId()));
     }
 }

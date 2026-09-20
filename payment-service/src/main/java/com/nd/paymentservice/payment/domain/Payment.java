@@ -81,8 +81,8 @@ public class Payment {
     }
 
     public void compensate() {
-        if (status !=PaymentStatus.SUCCEEDED) {
-            throw new IllegalStateException("Payment status must be SUCCEEDED");
+        if (status != PaymentStatus.SUCCEEDED) {
+            throw new IllegalStateException("Only SUCCEEDED payment can be compensated");
         }
 
         this.status = PaymentStatus.COMPENSATED;
