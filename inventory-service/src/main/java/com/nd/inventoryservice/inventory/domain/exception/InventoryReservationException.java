@@ -1,4 +1,4 @@
-package com.nd.inventoryservice.inventory.application.exception;
+package com.nd.inventoryservice.inventory.domain.exception;
 
 /**
  * @since 2026

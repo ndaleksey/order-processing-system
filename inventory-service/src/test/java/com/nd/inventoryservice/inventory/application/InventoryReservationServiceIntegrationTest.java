@@ -3,7 +3,7 @@ package com.nd.inventoryservice.inventory.application;
 import com.nd.inventoryservice.inventory.application.command.ReserveInventoryCommand;
 import com.nd.inventoryservice.inventory.application.model.ReservationItem;
 import com.nd.inventoryservice.inventory.domain.InventoryItem;
-import com.nd.inventoryservice.inventory.application.exception.InventoryReservationException;
+import com.nd.inventoryservice.inventory.domain.exception.InventoryReservationException;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventRepository;
 import com.nd.inventoryservice.inventory.messaging.outbox.OutboxEventType;
 import com.nd.inventoryservice.inventory.persistence.InventoryItemRepository;

@@ -1,6 +1,6 @@
 package com.nd.inventoryservice.inventory.domain;
 
-import com.nd.inventoryservice.inventory.application.exception.InventoryReservationException;
+import com.nd.inventoryservice.inventory.domain.exception.InventoryReservationException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

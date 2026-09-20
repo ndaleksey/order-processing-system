@@ -51,6 +51,7 @@ app:
     topics:
       orders: orders
       payments: payments
+      payment-requests: payment-requests
       inventory: inventory
       inventory-results: inventory-results
 

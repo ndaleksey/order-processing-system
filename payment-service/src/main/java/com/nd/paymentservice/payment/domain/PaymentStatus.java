@@ -6,5 +6,6 @@ package com.nd.paymentservice.payment.domain;
 public enum PaymentStatus {
     CREATED,
     SUCCEEDED,
-    FAILED
+    FAILED,
+    COMPENSATED
 }

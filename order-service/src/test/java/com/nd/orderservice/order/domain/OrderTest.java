@@ -1,6 +1,5 @@
 package com.nd.orderservice.order.domain;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -14,17 +13,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OrderTest {
 
 
-    @Disabled
     @Test
-    void shouldMarkConfirmedWhenStatusIsCreated() {
+    void shouldMarkConfirmedWhenStatusIsPaid() {
         // Given
         var order = Order.create(UUID.randomUUID());
+        order.markPaid();
 
         // When
         order.markConfirmed();
 
         // Then
         assertEquals(OrderStatus.CONFIRMED, order.getStatus());
+    }
+
+    @Test
+    void shouldRejectConfirmationWhenStatusIsCreated() {
+        var order = Order.create(UUID.randomUUID());
+
+        assertThrows(IllegalStateException.class, order::markConfirmed);
+        assertEquals(OrderStatus.CREATED, order.getStatus());
     }
 
     @Test
@@ -39,11 +46,12 @@ class OrderTest {
         assertEquals(OrderStatus.CANCELED, order.getStatus());
     }
 
-    @Disabled
     @Test
     void shouldThrowExceptionWhenCancelConfirmedOrder() {
         // Given
         var order = Order.create(UUID.randomUUID());
+
+        order.markPaid();
 
         order.markConfirmed();
 

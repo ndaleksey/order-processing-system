@@ -79,4 +79,13 @@ public class Payment {
         this.status = PaymentStatus.FAILED;
         this.updatedAt = Instant.now();
     }
+
+    public void compensate() {
+        if (status !=PaymentStatus.SUCCEEDED) {
+            throw new IllegalStateException("Payment status must be SUCCEEDED");
+        }
+
+        this.status = PaymentStatus.COMPENSATED;
+        this.updatedAt = Instant.now();
+    }
 }

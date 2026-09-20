@@ -5,5 +5,6 @@ package com.nd.paymentservice.payment.messaging.outbox;
  */
 public enum OutboxEventType {
     PAYMENT_SUCCEEDED,
-    PAYMENT_FAILED
+    PAYMENT_FAILED,
+    PAYMENT_COMPENSATED
 }

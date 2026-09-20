@@ -60,6 +60,14 @@ public class OutboxEvent {
         return create(eventId, paymentId, createdAt, OutboxEventType.PAYMENT_FAILED, payload);
     }
 
+    public static OutboxEvent createCompensated(
+            UUID eventId,
+            UUID paymentId,
+            Instant occurredAt,
+            String payload) {
+        return create(eventId, paymentId, occurredAt, OutboxEventType.PAYMENT_COMPENSATED, payload);
+    }
+
     public void markPublished() {
         this.publishedAt = Instant.now();
     }
