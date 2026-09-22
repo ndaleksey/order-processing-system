@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-processed-events
+      author: alex
+      changes:
+        - createTable:
+            tableName: processed_events
+            columns:
+              - column:
+                  name: event_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: processed_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false

@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-outbox-events
+      author: alex
+      changes:
+        - createTable:
+            tableName: outbox_events
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: type
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: aggregate_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: timestamp with timezone
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: published_at
+                  type: timestamp with time zone
+
+              - column:
+                  name: payload
+                  type: jsonb
+                  constraints:
+                    nullable: false
