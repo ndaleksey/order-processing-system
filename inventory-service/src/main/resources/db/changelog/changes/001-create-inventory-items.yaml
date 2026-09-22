@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-inventory-items
+      author: alex
+      changes:
+        - createTable:
+            tableName: inventory_items
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: product_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: available_quantity
+                  type: integer
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: inventory_items
+            columnNames: product_id
+            constraintName: uk_inventory_items_product_id

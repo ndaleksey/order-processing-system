@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: demo-001-inventory-fixtures
+      author: alex
+      context: "@demo"
+      changes:
+        - insert:
+            tableName: inventory_items
+            columns:
+              - column:
+                  name: id
+                  value: "10000000-0000-0000-0000-000000000001"
+              - column:
+                  name: product_id
+                  value: "20000000-0000-0000-0000-000000000001"
+              - column:
+                  name: available_quantity
+                  valueNumeric: 10
+
+        - insert:
+            tableName: inventory_items
+            columns:
+              - column:
+                  name: id
+                  value: "10000000-0000-0000-0000-000000000002"
+              - column:
+                  name: product_id
+                  value: "20000000-0000-0000-0000-000000000002"
+              - column:
+                  name: available_quantity
+                  valueNumeric: 5
+
+        - insert:
+            tableName: inventory_items
+            columns:
+              - column:
+                  name: id
+                  value: "10000000-0000-0000-0000-000000000003"
+              - column:
+                  name: product_id
+                  value: "20000000-0000-0000-0000-000000000003"
+              - column:
+                  name: available_quantity
+                  valueNumeric: 0
