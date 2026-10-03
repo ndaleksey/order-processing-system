@@ -28,6 +28,10 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
 
+logging:
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}) %highlight(%-5level) %magenta(${PID:- }) --- [%15.15t] %cyan(%logger{50}).%M : %msg%n%throwable"
+
 server:
   port: 8082
 

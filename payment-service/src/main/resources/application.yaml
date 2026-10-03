@@ -21,6 +21,10 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+logging:
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}) %highlight(%-5level) %magenta(${PID:- }) --- [%15.15t] %cyan(%logger{50}).%M : %msg%n%throwable"
+
 management:
   endpoint:
     health:
