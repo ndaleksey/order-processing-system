@@ -16,7 +16,7 @@ import tools.jackson.databind.exc.InvalidFormatException;
 public class KafkaErrorHandlingConfig {
 
     @Bean
-    DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
+    DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, String> kafkaTemplate) {
         var recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
                 (record, exception) -> new TopicPartition(
@@ -33,7 +33,6 @@ public class KafkaErrorHandlingConfig {
         var errorHandler = new DefaultErrorHandler(recoverer, backoff);
 
         errorHandler.addNotRetryableExceptions(
-                IllegalArgumentException.class,
                 InvalidFormatException.class
         );
 

@@ -24,9 +24,6 @@ public class InventoryReservationRequestedConsumer {
             topics = "${app.kafka.topics.inventory}",
             groupId = "${spring.kafka.consumer.group-id}")
     public void consume(String payload) {
-        if (System.getProperty("simulate.kafka.failure") != null) {
-            throw new IllegalArgumentException("Simulated Kafka consumer failed");
-        }
 
         var event = objectMapper.readValue(payload, InventoryReservationRequestedEvent.class);
         var items = itemMapper.toReservationItems(event.items());
