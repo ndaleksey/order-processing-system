@@ -24,6 +24,7 @@ public class InventoryReservationRequestedConsumer {
             topics = "${app.kafka.topics.inventory}",
             groupId = "${spring.kafka.consumer.group-id}")
     public void consume(String payload) {
+
         var event = objectMapper.readValue(payload, InventoryReservationRequestedEvent.class);
         var items = itemMapper.toReservationItems(event.items());
         var command = new ReserveInventoryCommand(event.eventId(), event.orderId(), items);
