@@ -7,6 +7,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 /**
  * @since 2026
@@ -29,6 +30,13 @@ public class KafkaErrorHandlingConfig {
                 2L
         );
 
-        return new DefaultErrorHandler(recoverer, backoff);
+        var errorHandler = new DefaultErrorHandler(recoverer, backoff);
+
+        errorHandler.addNotRetryableExceptions(
+                IllegalArgumentException.class,
+                InvalidFormatException.class
+        );
+
+        return errorHandler;
     }
 }

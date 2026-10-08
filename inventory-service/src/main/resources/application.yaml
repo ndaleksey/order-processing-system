@@ -31,6 +31,10 @@ spring:
 logging:
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}) %highlight(%-5level) %magenta(${PID:- }) --- [%15.15t] %cyan(%logger{50}).%M : %msg%n%throwable"
+  level:
+    org.apache.kafka.common.config.AbstractConfig: WARN
+    org.apache.kafka.clients.producer.ProducerConfig: WARN
+    org.apache.kafka.clients.consumer.ConsumerConfig: WARN
 
 server:
   port: 8082
